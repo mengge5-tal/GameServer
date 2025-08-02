@@ -1,0 +1,421 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>游戏服务器测试客户端</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .status {
+            padding: 10px;
+            border-radius: 4px;
+            margin-bottom: 10px;
+        }
+        .status.connected {
+            background-color: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        .status.disconnected {
+            background-color: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        .input-group {
+            margin-bottom: 15px;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+        input, textarea, select {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            box-sizing: border-box;
+        }
+        button {
+            background-color: #007bff;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            margin-right: 10px;
+            margin-bottom: 10px;
+        }
+        button:hover {
+            background-color: #0056b3;
+        }
+        button:disabled {
+            background-color: #6c757d;
+            cursor: not-allowed;
+        }
+        .message-log {
+            background-color: #f8f9fa;
+            border: 1px solid #e9ecef;
+            border-radius: 4px;
+            padding: 10px;
+            height: 300px;
+            overflow-y: auto;
+            font-family: monospace;
+            font-size: 12px;
+        }
+        .sent {
+            color: #007bff;
+        }
+        .received {
+            color: #28a745;
+        }
+        .error {
+            color: #dc3545;
+        }
+        .grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+        }
+    </style>
+</head>
+<body>
+    <h1>游戏服务器测试客户端</h1>
+    
+    <div class="container">
+        <h2>连接状态</h2>
+        <div id="status" class="status disconnected">未连接</div>
+        <button id="connectBtn" onclick="connect()">连接服务器</button>
+        <button id="disconnectBtn" onclick="disconnect()" disabled>断开连接</button>
+    </div>
+
+    <div class="grid">
+        <div class="container">
+            <h2>认证模块</h2>
+            <div class="input-group">
+                <label>用户名:</label>
+                <input type="text" id="username" value="testuser">
+            </div>
+            <div class="input-group">
+                <label>密码:</label>
+                <input type="password" id="password" value="123456">
+            </div>
+            <button onclick="register()">注册</button>
+            <button onclick="login()">登录</button>
+            <button onclick="logout()">登出</button>
+        </div>
+
+        <div class="container">
+            <h2>玩家信息模块</h2>
+            <div class="input-group">
+                <label>等级:</label>
+                <input type="number" id="level" value="1">
+            </div>
+            <div class="input-group">
+                <label>经验:</label>
+                <input type="number" id="experience" value="0">
+            </div>
+            <div class="input-group">
+                <label>游戏关卡:</label>
+                <input type="number" id="gamelevel" value="1">
+            </div>
+            <div class="input-group">
+                <label>血量能量:</label>
+                <input type="number" id="blood_energy" value="100">
+            </div>
+            <button onclick="getPlayerInfo()">获取玩家信息</button>
+            <button onclick="updatePlayerInfo()">更新玩家信息</button>
+        </div>
+    </div>
+
+    <div class="grid">
+        <div class="container">
+            <h2>装备模块</h2>
+            <div class="input-group">
+                <label>装备ID (0为新增):</label>
+                <input type="number" id="equipId" value="0">
+            </div>
+            <div class="input-group">
+                <label>装备类型:</label>
+                <input type="number" id="equipType" value="4">
+            </div>
+            <div class="input-group">
+                <label>品质:</label>
+                <input type="number" id="quality" value="1">
+            </div>
+            <div class="input-group">
+                <label>伤害:</label>
+                <input type="number" id="damage" value="100">
+            </div>
+            <div class="input-group">
+                <label>装备名称:</label>
+                <input type="text" id="equipName" value="测试装备">
+            </div>
+            <button onclick="getEquip()">获取装备列表</button>
+            <button onclick="saveEquip()">保存装备</button>
+            <button onclick="delEquip()">删除装备</button>
+            <button onclick="batchDelEquip()">批量删除装备</button>
+        </div>
+
+        <div class="container">
+            <h2>好友模块</h2>
+            <div class="input-group">
+                <label>目标用户ID:</label>
+                <input type="number" id="targetUserId" value="2">
+            </div>
+            <div class="input-group">
+                <label>好友申请消息:</label>
+                <input type="text" id="friendMessage" value="我想加你为好友">
+            </div>
+            <button onclick="getFriends()">获取好友列表</button>
+            <button onclick="addFriend()">发送好友申请</button>
+            <button onclick="getFriendRequests()">获取好友申请</button>
+            <button onclick="acceptFriend()">接受好友申请</button>
+            <button onclick="rejectFriend()">拒绝好友申请</button>
+            <button onclick="delFriend()">删除好友</button>
+        </div>
+    </div>
+
+    <div class="container">
+        <h2>排行榜模块</h2>
+        <div class="input-group">
+            <label>排行类型:</label>
+            <select id="rankType">
+                <option value="level">等级排行</option>
+                <option value="experience">经验排行</option>
+            </select>
+        </div>
+        <button onclick="getAllRank()">获取排行榜</button>
+        <button onclick="getSelfRank()">获取个人排名</button>
+    </div>
+
+    <div class="container">
+        <h2>其他功能</h2>
+        <button onclick="ping()">心跳测试</button>
+        <button onclick="clearLog()">清空日志</button>
+    </div>
+
+    <div class="container">
+        <h2>消息日志</h2>
+        <div id="messageLog" class="message-log"></div>
+    </div>
+
+    <script>
+        let ws = null;
+        let requestId = 1;
+
+        function generateRequestId() {
+            return 'req_' + (requestId++);
+        }
+
+        function log(message, type = 'info') {
+            const logDiv = document.getElementById('messageLog');
+            const timestamp = new Date().toLocaleTimeString();
+            const className = type === 'sent' ? 'sent' : type === 'received' ? 'received' : type === 'error' ? 'error' : '';
+            logDiv.innerHTML += `<div class="${className}">[${timestamp}] ${message}</div>`;
+            logDiv.scrollTop = logDiv.scrollHeight;
+        }
+
+        function connect() {
+            ws = new WebSocket('ws://localhost:8080/ws');
+            
+            ws.onopen = function() {
+                document.getElementById('status').textContent = '已连接';
+                document.getElementById('status').className = 'status connected';
+                document.getElementById('connectBtn').disabled = true;
+                document.getElementById('disconnectBtn').disabled = false;
+                log('WebSocket连接成功');
+            };
+
+            ws.onmessage = function(event) {
+                log('接收: ' + event.data, 'received');
+            };
+
+            ws.onclose = function() {
+                document.getElementById('status').textContent = '未连接';
+                document.getElementById('status').className = 'status disconnected';
+                document.getElementById('connectBtn').disabled = false;
+                document.getElementById('disconnectBtn').disabled = true;
+                log('WebSocket连接已断开');
+            };
+
+            ws.onerror = function(error) {
+                log('WebSocket错误: ' + error, 'error');
+            };
+        }
+
+        function disconnect() {
+            if (ws) {
+                ws.close();
+                ws = null;
+            }
+        }
+
+        function sendMessage(type, action, data) {
+            if (!ws || ws.readyState !== WebSocket.OPEN) {
+                log('WebSocket未连接', 'error');
+                return;
+            }
+
+            const message = {
+                type: type,
+                action: action,
+                data: data,
+                requestId: generateRequestId(),
+                timestamp: Math.floor(Date.now() / 1000)
+            };
+
+            const jsonMessage = JSON.stringify(message);
+            ws.send(jsonMessage);
+            log('发送: ' + jsonMessage, 'sent');
+        }
+
+        // 认证模块
+        function register() {
+            sendMessage('auth', 'register', {
+                username: document.getElementById('username').value,
+                password: document.getElementById('password').value
+            });
+        }
+
+        function login() {
+            sendMessage('auth', 'login', {
+                username: document.getElementById('username').value,
+                password: document.getElementById('password').value
+            });
+        }
+
+        function logout() {
+            sendMessage('auth', 'logout', {});
+        }
+
+        // 玩家信息模块
+        function getPlayerInfo() {
+            sendMessage('player', 'getPlayerInfo', {});
+        }
+
+        function updatePlayerInfo() {
+            sendMessage('player', 'updatePlayerInfo', {
+                level: parseInt(document.getElementById('level').value),
+                experience: parseInt(document.getElementById('experience').value),
+                gamelevel: parseInt(document.getElementById('gamelevel').value),
+                blood_energy: parseInt(document.getElementById('blood_energy').value)
+            });
+        }
+
+        // 装备模块
+        function getEquip() {
+            sendMessage('equip', 'getEquip', {});
+        }
+
+        function saveEquip() {
+            sendMessage('equip', 'saveEquip', {
+                equipment: {
+                    equipid: parseInt(document.getElementById('equipId').value),
+                    type: parseInt(document.getElementById('equipType').value),
+                    quality: parseInt(document.getElementById('quality').value),
+                    damage: parseInt(document.getElementById('damage').value),
+                    crit: 10,
+                    critdamage: 150,
+                    damagespeed: 100,
+                    bloodsuck: 5,
+                    hp: 200,
+                    movespeed: 100,
+                    equipname: document.getElementById('equipName').value,
+                    defense: 50,
+                    goodfortune: 10
+                }
+            });
+        }
+
+        function delEquip() {
+            const equipId = parseInt(document.getElementById('equipId').value);
+            if (equipId <= 0) {
+                log('请输入有效的装备ID', 'error');
+                return;
+            }
+            sendMessage('equip', 'delEquip', {
+                equipid: equipId
+            });
+        }
+
+        function batchDelEquip() {
+            sendMessage('equip', 'batchDelEquip', {
+                quality: parseInt(document.getElementById('quality').value)
+            });
+        }
+
+        // 好友模块
+        function getFriends() {
+            sendMessage('friend', 'getFriends', {});
+        }
+
+        function addFriend() {
+            sendMessage('friend', 'addFriend', {
+                touserid: parseInt(document.getElementById('targetUserId').value),
+                message: document.getElementById('friendMessage').value
+            });
+        }
+
+        function getFriendRequests() {
+            sendMessage('friend', 'friendRequest', {});
+        }
+
+        function acceptFriend() {
+            sendMessage('friend', 'friendResponse', {
+                fromuserid: parseInt(document.getElementById('targetUserId').value),
+                accept: true
+            });
+        }
+
+        function rejectFriend() {
+            sendMessage('friend', 'friendResponse', {
+                fromuserid: parseInt(document.getElementById('targetUserId').value),
+                accept: false
+            });
+        }
+
+        function delFriend() {
+            sendMessage('friend', 'delFriend', {
+                frienduserid: parseInt(document.getElementById('targetUserId').value)
+            });
+        }
+
+        // 排行榜模块
+        function getAllRank() {
+            sendMessage('rank', 'getAllRank', {
+                rank_type: document.getElementById('rankType').value,
+                limit: 10
+            });
+        }
+
+        function getSelfRank() {
+            sendMessage('rank', 'getSelfRank', {
+                rank_type: document.getElementById('rankType').value
+            });
+        }
+
+        // 其他功能
+        function ping() {
+            sendMessage('heartbeat', 'ping', {});
+        }
+
+        function clearLog() {
+            document.getElementById('messageLog').innerHTML = '';
+        }
+    </script>
+</body>
+</html>
