@@ -39,13 +39,14 @@ const (
 
 // 消息类型定义
 const (
-	MessageTypeAuth     = "auth"      // 认证相关
-	MessageTypeUser     = "user"      // 用户相关
-	MessageTypeEquip    = "equip"     // 装备相关
-	MessageTypePlayer   = "player"    // 玩家信息相关
-	MessageTypeFriend   = "friend"    // 好友相关
-	MessageTypeRank     = "rank"      // 排行榜相关
-	MessageTypeHeartbeat = "heartbeat" // 心跳
+	MessageTypeAuth        = "auth"        // 认证相关
+	MessageTypeUser        = "user"        // 用户相关
+	MessageTypeEquip       = "equip"       // 装备相关
+	MessageTypeSourcestone = "sourcestone" // 源石相关
+	MessageTypePlayer      = "player"      // 玩家信息相关
+	MessageTypeFriend      = "friend"      // 好友相关
+	MessageTypeRank        = "rank"        // 排行榜相关
+	MessageTypeHeartbeat   = "heartbeat"   // 心跳
 )
 
 // 操作类型定义

@@ -52,5 +52,30 @@ func SetupHandlers(router *Router, db *sql.DB) {
 		return handleUpdatePlayerInfo(c, message, db)
 	})
 
+	// 注册 sourcestone 处理器
+	router.RegisterFunc(MessageTypeSourcestone, "createSourcestone", func(c *Client, message *Message) *Response {
+		return handleCreateSourcestone(c, message, db)
+	})
+
+	router.RegisterFunc(MessageTypeSourcestone, "getSourcestones", func(c *Client, message *Message) *Response {
+		return handleGetSourcestones(c, message, db)
+	})
+
+	router.RegisterFunc(MessageTypeSourcestone, "getSourcestone", func(c *Client, message *Message) *Response {
+		return handleGetSourcestone(c, message, db)
+	})
+
+	router.RegisterFunc(MessageTypeSourcestone, "updateSourcestone", func(c *Client, message *Message) *Response {
+		return handleUpdateSourcestone(c, message, db)
+	})
+
+	router.RegisterFunc(MessageTypeSourcestone, "deleteSourcestone", func(c *Client, message *Message) *Response {
+		return handleDeleteSourcestone(c, message, db)
+	})
+
+	router.RegisterFunc(MessageTypeSourcestone, "deleteAllSourcestones", func(c *Client, message *Message) *Response {
+		return handleDeleteAllSourcestones(c, message, db)
+	})
+
 	log.Println("All handlers registered successfully")
 }
