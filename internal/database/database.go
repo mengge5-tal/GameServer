@@ -27,6 +27,12 @@ func ConnectDatabase(cfg *config.Config) (*sql.DB, error) {
 		return nil, fmt.Errorf("failed to ping database: %v", err)
 	}
 
+	// 预热连接池
+	if err := WarmupConnectionPool(db, cfg.Database.MaxIdleConns); err != nil {
+		log.Printf("Warning: Failed to warmup connection pool: %v", err)
+		// 不中断启动流程，只记录警告
+	}
+
 	log.Printf("Successfully connected to database at %s:%s", cfg.Database.Host, cfg.Database.Port)
 	log.Printf("Connection pool configured: MaxOpen=%d, MaxIdle=%d, MaxLifetime=%s, MaxIdleTime=%s", 
 		cfg.Database.MaxOpenConns, cfg.Database.MaxIdleConns, cfg.Database.ConnMaxLifetime, cfg.Database.ConnMaxIdleTime)
@@ -236,4 +242,69 @@ func CheckTableStructure(db *sql.DB) error {
 	}
 
 	return nil
+}
+
+// WarmupConnectionPool 预热数据库连接池
+func WarmupConnectionPool(db *sql.DB, targetConnections int) error {
+	log.Printf("Warming up connection pool with %d connections...", targetConnections)
+	
+	// 创建多个并发连接来预热连接池
+	done := make(chan bool, targetConnections)
+	errors := make(chan error, targetConnections)
+	
+	for i := 0; i < targetConnections; i++ {
+		go func(connNum int) {
+			// 执行一个简单的查询来建立连接
+			var result int
+			err := db.QueryRow("SELECT 1").Scan(&result)
+			if err != nil {
+				log.Printf("Failed to warmup connection %d: %v", connNum, err)
+				errors <- err
+			} else {
+				log.Printf("Connection %d warmed up successfully", connNum)
+				done <- true
+			}
+		}(i)
+	}
+	
+	// 等待所有连接完成或失败
+	successCount := 0
+	errorCount := 0
+	for i := 0; i < targetConnections; i++ {
+		select {
+		case <-done:
+			successCount++
+		case <-errors:
+			errorCount++
+		}
+	}
+	
+	log.Printf("Connection pool warmup completed: %d successful, %d failed", successCount, errorCount)
+	
+	// 获取连接池统计信息
+	stats := db.Stats()
+	log.Printf("Connection pool stats after warmup: Open=%d, InUse=%d, Idle=%d", 
+		stats.OpenConnections, stats.InUse, stats.Idle)
+	
+	if errorCount > targetConnections/2 {
+		return fmt.Errorf("too many connection failures during warmup: %d/%d", errorCount, targetConnections)
+	}
+	
+	return nil
+}
+
+// GetConnectionPoolStats 获取连接池统计信息
+func GetConnectionPoolStats(db *sql.DB) map[string]interface{} {
+	stats := db.Stats()
+	return map[string]interface{}{
+		"max_open_connections":     stats.MaxOpenConnections,
+		"open_connections":         stats.OpenConnections,
+		"in_use":                   stats.InUse,
+		"idle":                     stats.Idle,
+		"wait_count":               stats.WaitCount,
+		"wait_duration_ms":         stats.WaitDuration.Milliseconds(),
+		"max_idle_closed":          stats.MaxIdleClosed,
+		"max_idle_time_closed":     stats.MaxIdleTimeClosed,
+		"max_lifetime_closed":      stats.MaxLifetimeClosed,
+	}
 }

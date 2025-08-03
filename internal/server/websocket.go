@@ -150,6 +150,12 @@ func (h *Hub) Run() {
 					}
 					delete(h.UserClients, client.UserID)
 				}
+				
+				// 从限流器中移除客户端
+				if rateLimiter := GetRateLimiter(); rateLimiter != nil {
+					rateLimiter.RemoveClient(client.ID)
+				}
+				
 				close(client.Send)
 			}
 			h.mutex.Unlock()

@@ -34,6 +34,14 @@ func main() {
 	// 初始化监控系统
 	metrics.Init()
 	logger.Info("Metrics system initialized")
+	
+	// 初始化限流器
+	server.InitRateLimiter(60, time.Minute) // 每分钟60个请求，每分钟清理一次
+	logger.Info("Rate limiter initialized")
+	
+	// 初始化缓存系统
+	server.InitCaches()
+	logger.Info("Cache system initialized")
 
 	// 连接数据库
 	db, err := database.ConnectDatabase(cfg)
@@ -83,6 +91,10 @@ func main() {
 	// 创建Hub
 	hub := server.NewHub(db, router)
 	go hub.Run()
+	
+	// 初始化性能监控器
+	server.InitPerformanceMonitor(hub, 10*time.Second) // 每10秒更新一次指标
+	logger.Info("Performance monitor initialized")
 
 	// 设置路由
 	http.HandleFunc("/ws", hub.HandleWebSocket)
@@ -102,11 +114,22 @@ func main() {
 		json.NewEncoder(w).Encode(response)
 	})
 
-	// 监控指标端点
+	// 监控指标端点（原有的简单指标）
 	http.HandleFunc("/metrics", func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
 		currentMetrics := metrics.GetMetrics()
 		json.NewEncoder(w).Encode(currentMetrics)
+	})
+
+	// 性能监控端点（新的详细性能指标）
+	http.HandleFunc("/performance", func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		if perfMonitor := server.GetPerformanceMonitor(); perfMonitor != nil {
+			performanceMetrics := perfMonitor.GetMetricsWithDatabaseStats()
+			json.NewEncoder(w).Encode(performanceMetrics)
+		} else {
+			http.Error(w, "Performance monitor not initialized", http.StatusServiceUnavailable)
+		}
 	})
 
 	// 路由信息端点

@@ -69,39 +69,27 @@ func LoggingMiddleware() Middleware {
 	})
 }
 
-// RateLimitMiddleware 限流中间件（简单实现）
+// RateLimitMiddleware 限流中间件（优化版本）
 func RateLimitMiddleware() Middleware {
-	clientRequestCounts := make(map[string][]time.Time)
-	maxRequestsPerMinute := 60
-
 	return MiddlewareFunc(func(c *Client, message *Message, next Handler) *Response {
-		now := time.Now()
-		clientID := c.ID
-
-		// 清理过期的请求记录
-		if requests, exists := clientRequestCounts[clientID]; exists {
-			validRequests := make([]time.Time, 0)
-			for _, requestTime := range requests {
-				if now.Sub(requestTime) < time.Minute {
-					validRequests = append(validRequests, requestTime)
-				}
-			}
-			clientRequestCounts[clientID] = validRequests
+		// 使用全局限流器
+		rateLimiter := GetRateLimiter()
+		if rateLimiter == nil {
+			// 如果限流器未初始化，跳过限流
+			logger.Warn("Rate limiter not initialized, skipping rate limit check", nil)
+			return next.Handle(c, message)
 		}
 
-		// 检查请求频率
-		if len(clientRequestCounts[clientID]) >= maxRequestsPerMinute {
+		// 检查是否允许请求
+		if !rateLimiter.IsAllowed(c.ID) {
 			logger.Warn("Rate limit exceeded", map[string]interface{}{
-				"client_id":      c.ID,
-				"user_id":        c.UserID,
-				"request_count":  len(clientRequestCounts[clientID]),
-				"limit":          maxRequestsPerMinute,
+				"client_id": c.ID,
+				"user_id":   c.UserID,
+				"action":    message.Action,
+				"type":      message.Type,
 			})
 			return NewErrorResponse(message.RequestID, CodeServerError, "Rate limit exceeded")
 		}
-
-		// 记录当前请求
-		clientRequestCounts[clientID] = append(clientRequestCounts[clientID], now)
 
 		return next.Handle(c, message)
 	})
