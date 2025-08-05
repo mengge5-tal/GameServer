@@ -1,17 +1,16 @@
 package server
 
 import (
+	"GameServer/internal/handlers/online"
 	"database/sql"
+	"github.com/google/uuid"
+	"github.com/gorilla/websocket"
 	"log"
 	"net/http"
 	"os"
 	"strings"
 	"sync"
 	"time"
-
-	"GameServer/internal/handlers/online"
-	"github.com/google/uuid"
-	"github.com/gorilla/websocket"
 )
 
 var upgrader = websocket.Upgrader{
@@ -150,12 +149,12 @@ func (h *Hub) Run() {
 					}
 					delete(h.UserClients, client.UserID)
 				}
-				
+
 				// 从限流器中移除客户端
 				if rateLimiter := GetRateLimiter(); rateLimiter != nil {
 					rateLimiter.RemoveClient(client.ID)
 				}
-				
+
 				close(client.Send)
 			}
 			h.mutex.Unlock()

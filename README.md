@@ -1,6 +1,31 @@
-# GameServer
+# GameServer v2.0 - Clean Architecture
 
-一个基于WebSocket的游戏服务器，采用标准的Go项目布局，支持用户认证、装备管理、好友系统和排行榜等功能。
+一个基于WebSocket的游戏服务器，采用Clean Architecture和DDD设计模式，支持用户认证、装备管理、好友系统和排行榜等功能。
+
+> **🚀 Version 2.0 现已发布！** 项目已完全重构为企业级Clean Architecture，具备更高的可维护性、可测试性和扩展性。
+
+## ⚡ 快速开始
+
+### 1. 环境配置
+```bash
+# 复制环境变量模板
+cp .env.example .env
+# 编辑配置文件，设置数据库连接信息
+vim .env
+```
+
+### 2. 启动服务器
+```bash
+# 编译并启动
+go build -o gameserver ./cmd/server
+./gameserver
+```
+
+服务器将在 `localhost:8080` 启动
+
+## 📚 完整文档
+- **[完整架构文档](README_v2.md)** - 详细的架构设计和使用指南
+- **[迁移指南](MIGRATION_GUIDE.md)** - 从旧版本迁移的详细步骤
 
 ## 项目结构
 

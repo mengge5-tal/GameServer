@@ -1,149 +1,166 @@
 package main
 
 import (
-	"GameServer/internal/config"
-	"GameServer/internal/database"
-	"GameServer/internal/handlers/online"
-	"GameServer/internal/server"
-	"GameServer/pkg/logger"
-	"GameServer/pkg/metrics"
 	"encoding/json"
 	"fmt"
 	"log"
 	"net/http"
+	"os"
+	"os/signal"
+	"syscall"
 	"time"
+
+	"GameServer/internal/infrastructure/config"
+	"GameServer/internal/infrastructure/container"
+	"GameServer/internal/infrastructure/database"
+	"GameServer/internal/interfaces/websocket"
+	"GameServer/pkg/logger"
+	"GameServer/pkg/metrics"
 )
 
 func main() {
-	log.Println("Starting Game Server...")
+	log.Println("Starting Game Server with new architecture...")
 
-	// 加载配置
+	// Load configuration
 	cfg, err := config.Load()
 	if err != nil {
 		log.Fatalf("Failed to load configuration: %v", err)
 	}
 	log.Printf("Configuration loaded successfully")
 
-	// 初始化日志系统
+	// Initialize logging system
 	logger.Init(cfg.Logging.Level, cfg.Logging.Format)
 	logger.Info("Logging system initialized", map[string]interface{}{
 		"level":  cfg.Logging.Level,
 		"format": cfg.Logging.Format,
 	})
 
-	// 初始化监控系统
+	// Initialize metrics system
 	metrics.Init()
 	logger.Info("Metrics system initialized")
-	
-	// 初始化限流器
-	server.InitRateLimiter(60, time.Minute) // 每分钟60个请求，每分钟清理一次
-	logger.Info("Rate limiter initialized")
-	
-	// 初始化缓存系统
-	server.InitCaches()
-	logger.Info("Cache system initialized")
 
-	// 连接数据库
-	db, err := database.ConnectDatabase(cfg)
+	// Connect to database
+	dbConnection, err := database.NewConnection(cfg)
 	if err != nil {
 		log.Fatalf("Failed to connect to database: %v", err)
 	}
-	defer db.Close()
+	defer dbConnection.Close()
 
-	// 创建缺失的表
-	log.Println("Creating missing tables...")
-	if err := database.CreateMissingTables(db); err != nil {
-		log.Fatalf("Error creating missing tables: %v", err)
-	}
-
-	// 检查数据库表是否存在
+	// Check database tables
 	log.Println("Checking database tables...")
-	if err := database.CheckDatabaseTables(db); err != nil {
-		log.Fatalf("Error checking database tables: %v", err)
+	if err := dbConnection.CreateMissingTables(); err != nil {
+		log.Fatalf("Error with database tables: %v", err)
 	}
 
-	// 检查表结构
-	log.Println("Checking table structures...")
-	if err := database.CheckTableStructure(db); err != nil {
+	if err := dbConnection.CheckTableStructure(); err != nil {
 		log.Fatalf("Error checking table structure: %v", err)
 	}
 
-	log.Println("Database connection and structure check completed successfully!")
-
-	// 创建路由器
-	router := server.NewRouter()
-	
-	// 添加中间件
-	router.Use(server.ValidationMiddleware())
-	router.Use(server.AuthMiddleware())
-	router.Use(server.LoggingMiddleware())
-	router.Use(server.RateLimitMiddleware())
-	
-	// 设置处理器
-	server.SetupHandlers(router, db)
-	
-	// 初始化在线状态管理，将所有用户设置为离线状态
-	onlineService := online.NewOnlineService(db)
-	if err := onlineService.SetAllUsersOffline(); err != nil {
-		log.Printf("Warning: Failed to initialize user online status: %v", err)
+	// Set all users offline on startup
+	if err := dbConnection.SetAllUsersOffline(); err != nil {
+		log.Printf("Warning: Failed to set users offline: %v", err)
 	}
 
-	// 创建Hub
-	hub := server.NewHub(db, router)
+	log.Println("Database initialization completed successfully!")
+
+	// Initialize dependency injection container
+	container, err := container.NewContainer(cfg, dbConnection.GetDB())
+	if err != nil {
+		log.Fatalf("Failed to initialize container: %v", err)
+	}
+	defer container.Close()
+
+	logger.Info("Dependency injection container initialized")
+
+	// Create WebSocket hub
+	hub := websocket.NewHub(container.GetWebSocketServices())
 	go hub.Run()
-	
-	// 初始化性能监控器
-	server.InitPerformanceMonitor(hub, 10*time.Second) // 每10秒更新一次指标
-	logger.Info("Performance monitor initialized")
 
-	// 设置路由
+	logger.Info("WebSocket hub started")
+
+	// Setup HTTP routes
+	setupRoutes(hub, container, cfg)
+
+	// Start server
+	serverAddr := fmt.Sprintf("%s:%d", cfg.Server.Host, cfg.Server.Port)
+	log.Printf("Server starting on %s", serverAddr)
+	log.Printf("WebSocket endpoint: ws://%s/ws", serverAddr)
+
+	// Graceful shutdown
+	go func() {
+		if err := http.ListenAndServe(serverAddr, nil); err != nil {
+			log.Fatalf("Server failed to start: %v", err)
+		}
+	}()
+
+	// Wait for shutdown signal
+	waitForShutdown()
+	log.Println("Server shutting down gracefully...")
+}
+
+// setupRoutes configures all HTTP routes
+func setupRoutes(hub *websocket.Hub, container *container.Container, cfg *config.Config) {
+	// WebSocket endpoint
 	http.HandleFunc("/ws", hub.HandleWebSocket)
-	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
-		w.Write([]byte("Game Server is running!"))
-	})
 
-	// 健康检查端点
+	// Health check endpoint
 	http.HandleFunc("/health", func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusOK)
 		response := map[string]interface{}{
 			"status":    "healthy",
 			"timestamp": time.Now().Unix(),
-			"version":   "1.0.0",
+			"version":   "2.0.0", // Updated version for new architecture
+			"architecture": "clean-architecture",
 		}
 		json.NewEncoder(w).Encode(response)
 	})
 
-	// 监控指标端点（原有的简单指标）
+	// Metrics endpoint
 	http.HandleFunc("/metrics", func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
 		currentMetrics := metrics.GetMetrics()
 		json.NewEncoder(w).Encode(currentMetrics)
 	})
 
-	// 性能监控端点（新的详细性能指标）
-	http.HandleFunc("/performance", func(w http.ResponseWriter, r *http.Request) {
+	// API info endpoint
+	http.HandleFunc("/info", func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
-		if perfMonitor := server.GetPerformanceMonitor(); perfMonitor != nil {
-			performanceMetrics := perfMonitor.GetMetricsWithDatabaseStats()
-			json.NewEncoder(w).Encode(performanceMetrics)
-		} else {
-			http.Error(w, "Performance monitor not initialized", http.StatusServiceUnavailable)
+		info := map[string]interface{}{
+			"service":      "GameServer",
+			"version":      "2.0.0",
+			"architecture": "Clean Architecture with DDD",
+			"endpoints": map[string]string{
+				"websocket": "/ws",
+				"health":    "/health",
+				"metrics":   "/metrics",
+				"info":      "/info",
+			},
+			"features": []string{
+				"User Authentication",
+				"Player Management", 
+				"Equipment System",
+				"Friend System",
+				"Ranking System",
+				"Real-time WebSocket Communication",
+			},
 		}
+		json.NewEncoder(w).Encode(info)
 	})
 
-	// 路由信息端点
-	http.HandleFunc("/routes", func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Set("Content-Type", "application/json")
-		routes := router.GetRoutes()
-		json.NewEncoder(w).Encode(routes)
+	// Root endpoint
+	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Path != "/" {
+			http.NotFound(w, r)
+			return
+		}
+		w.Write([]byte("Game Server v2.0 with Clean Architecture is running!"))
 	})
+}
 
-	serverAddr := fmt.Sprintf("%s:%d", cfg.Server.Host, cfg.Server.Port)
-	log.Printf("Server starting on %s", serverAddr)
-	log.Printf("WebSocket endpoint: ws://%s/ws", serverAddr)
-
-	if err := http.ListenAndServe(serverAddr, nil); err != nil {
-		log.Fatalf("Server failed to start: %v", err)
-	}
+// waitForShutdown waits for interrupt signals for graceful shutdown
+func waitForShutdown() {
+	c := make(chan os.Signal, 1)
+	signal.Notify(c, os.Interrupt, syscall.SIGTERM)
+	<-c
 }
