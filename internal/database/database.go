@@ -1,17 +1,17 @@
 package database
 
 import (
+	"GameServer/internal/infrastructure/config"
 	"database/sql"
 	"fmt"
 	"log"
-	"GameServer/internal/config"
 
 	_ "github.com/go-sql-driver/mysql"
 )
 
 func ConnectDatabase(cfg *config.Config) (*sql.DB, error) {
 	connectionString := cfg.GetConnectionString()
-	
+
 	db, err := sql.Open("mysql", connectionString)
 	if err != nil {
 		return nil, fmt.Errorf("failed to open database connection: %v", err)
@@ -34,14 +34,14 @@ func ConnectDatabase(cfg *config.Config) (*sql.DB, error) {
 	}
 
 	log.Printf("Successfully connected to database at %s:%s", cfg.Database.Host, cfg.Database.Port)
-	log.Printf("Connection pool configured: MaxOpen=%d, MaxIdle=%d, MaxLifetime=%s, MaxIdleTime=%s", 
+	log.Printf("Connection pool configured: MaxOpen=%d, MaxIdle=%d, MaxLifetime=%s, MaxIdleTime=%s",
 		cfg.Database.MaxOpenConns, cfg.Database.MaxIdleConns, cfg.Database.ConnMaxLifetime, cfg.Database.ConnMaxIdleTime)
 	return db, nil
 }
 
 func CheckDatabaseTables(db *sql.DB) error {
 	tables := []string{"user", "equip", "playerinfo", "friend", "friend_request", "ranking"}
-	
+
 	for _, table := range tables {
 		query := fmt.Sprintf("SHOW TABLES LIKE '%s'", table)
 		var tableName string
@@ -54,13 +54,13 @@ func CheckDatabaseTables(db *sql.DB) error {
 			log.Printf("Table '%s' exists", table)
 		}
 	}
-	
+
 	return nil
 }
 
 func CreateMissingTables(db *sql.DB) error {
 	log.Println("Creating missing tables...")
-	
+
 	// 好友关系表
 	friendTable := `
 	CREATE TABLE IF NOT EXISTS friend (
@@ -72,12 +72,12 @@ func CreateMissingTables(db *sql.DB) error {
 		updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
 		UNIQUE KEY unique_friendship (fromuserid, touserid)
 	)`
-	
+
 	if _, err := db.Exec(friendTable); err != nil {
 		return fmt.Errorf("failed to create friend table: %v", err)
 	}
 	log.Println("Friend table created/verified")
-	
+
 	// 好友申请表
 	friendRequestTable := `
 	CREATE TABLE IF NOT EXISTS friend_request (
@@ -90,12 +90,12 @@ func CreateMissingTables(db *sql.DB) error {
 		updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
 		UNIQUE KEY unique_request (fromuserid, touserid)
 	)`
-	
+
 	if _, err := db.Exec(friendRequestTable); err != nil {
 		return fmt.Errorf("failed to create friend_request table: %v", err)
 	}
 	log.Println("Friend_request table created/verified")
-	
+
 	// 排行榜表
 	rankingTable := `
 	CREATE TABLE IF NOT EXISTS ranking (
@@ -107,14 +107,14 @@ func CreateMissingTables(db *sql.DB) error {
 		updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
 		UNIQUE KEY unique_user_rank_type (userid, rank_type)
 	)`
-	
+
 	if _, err := db.Exec(rankingTable); err != nil {
 		return fmt.Errorf("failed to create ranking table: %v", err)
 	}
 	log.Println("Ranking table created/verified")
-	
+
 	// 创建索引 - 使用兼容的语法
-	indexes := []struct{
+	indexes := []struct {
 		name string
 		sql  string
 	}{
@@ -123,13 +123,13 @@ func CreateMissingTables(db *sql.DB) error {
 		{"idx_friend_request_touserid", "CREATE INDEX idx_friend_request_touserid ON friend_request(touserid)"},
 		{"idx_ranking_type_value", "CREATE INDEX idx_ranking_type_value ON ranking(rank_type, rank_value DESC)"},
 	}
-	
+
 	for _, index := range indexes {
 		// 检查索引是否存在
 		var indexExists bool
-		err := db.QueryRow("SELECT COUNT(*) > 0 FROM information_schema.statistics WHERE table_schema = DATABASE() AND index_name = ?", 
+		err := db.QueryRow("SELECT COUNT(*) > 0 FROM information_schema.statistics WHERE table_schema = DATABASE() AND index_name = ?",
 			index.name).Scan(&indexExists)
-		
+
 		if err != nil || !indexExists {
 			if _, err := db.Exec(index.sql); err != nil {
 				log.Printf("Warning: failed to create index %s: %v", index.name, err)
@@ -140,7 +140,7 @@ func CreateMissingTables(db *sql.DB) error {
 			log.Printf("Index %s already exists", index.name)
 		}
 	}
-	
+
 	// 修复用户表的自动递增问题
 	_, err := db.Exec("ALTER TABLE user MODIFY COLUMN userid INT AUTO_INCREMENT")
 	if err != nil {
@@ -148,19 +148,19 @@ func CreateMissingTables(db *sql.DB) error {
 	} else {
 		log.Println("User table userid field set to AUTO_INCREMENT")
 	}
-	
+
 	// 修复密码字段长度以支持bcrypt哈希（需要60个字符）
-	_, err = db.Exec("ALTER TABLE user MODIFY COLUMN passward VARCHAR(255)")
+	_, err = db.Exec("ALTER TABLE user MODIFY COLUMN password VARCHAR(255)")
 	if err != nil {
-		log.Printf("Warning: failed to modify user table passward field: %v", err)
+		log.Printf("Warning: failed to modify user table password field: %v", err)
 	} else {
-		log.Println("User table passward field extended to VARCHAR(255)")
+		log.Println("User table password field extended to VARCHAR(255)")
 	}
-	
+
 	// 检查并添加在线状态字段
 	var onlineStatusExists bool
 	err = db.QueryRow("SELECT COUNT(*) > 0 FROM information_schema.columns WHERE table_schema = DATABASE() AND table_name = 'user' AND column_name = 'online_status'").Scan(&onlineStatusExists)
-	
+
 	if err != nil {
 		log.Printf("Warning: failed to check online_status column existence: %v", err)
 	} else if !onlineStatusExists {
@@ -173,11 +173,11 @@ func CreateMissingTables(db *sql.DB) error {
 	} else {
 		log.Println("online_status column already exists in user table")
 	}
-	
+
 	// 检查并添加装备表的type字段
 	var typeColumnExists bool
 	err = db.QueryRow("SELECT COUNT(*) > 0 FROM information_schema.columns WHERE table_schema = DATABASE() AND table_name = 'equip' AND column_name = 'type'").Scan(&typeColumnExists)
-	
+
 	if err != nil {
 		log.Printf("Warning: failed to check type column existence: %v", err)
 	} else if !typeColumnExists {
@@ -190,7 +190,7 @@ func CreateMissingTables(db *sql.DB) error {
 	} else {
 		log.Println("Type column already exists in equip table")
 	}
-	
+
 	log.Println("All missing tables and indexes created successfully")
 	return nil
 }
@@ -206,7 +206,7 @@ func CheckTableStructure(db *sql.DB) error {
 		for rows.Next() {
 			var field, fieldType, null, key, defaultVal, extra sql.NullString
 			rows.Scan(&field, &fieldType, &null, &key, &defaultVal, &extra)
-			log.Printf("user table - Field: %s, Type: %s, Key: %s", 
+			log.Printf("user table - Field: %s, Type: %s, Key: %s",
 				field.String, fieldType.String, key.String)
 		}
 	}
@@ -221,7 +221,7 @@ func CheckTableStructure(db *sql.DB) error {
 		for rows.Next() {
 			var field, fieldType, null, key, defaultVal, extra sql.NullString
 			rows.Scan(&field, &fieldType, &null, &key, &defaultVal, &extra)
-			log.Printf("equip table - Field: %s, Type: %s, Key: %s", 
+			log.Printf("equip table - Field: %s, Type: %s, Key: %s",
 				field.String, fieldType.String, key.String)
 		}
 	}
@@ -236,7 +236,7 @@ func CheckTableStructure(db *sql.DB) error {
 		for rows.Next() {
 			var field, fieldType, null, key, defaultVal, extra sql.NullString
 			rows.Scan(&field, &fieldType, &null, &key, &defaultVal, &extra)
-			log.Printf("playerinfo table - Field: %s, Type: %s, Key: %s", 
+			log.Printf("playerinfo table - Field: %s, Type: %s, Key: %s",
 				field.String, fieldType.String, key.String)
 		}
 	}
@@ -247,11 +247,11 @@ func CheckTableStructure(db *sql.DB) error {
 // WarmupConnectionPool 预热数据库连接池
 func WarmupConnectionPool(db *sql.DB, targetConnections int) error {
 	log.Printf("Warming up connection pool with %d connections...", targetConnections)
-	
+
 	// 创建多个并发连接来预热连接池
 	done := make(chan bool, targetConnections)
 	errors := make(chan error, targetConnections)
-	
+
 	for i := 0; i < targetConnections; i++ {
 		go func(connNum int) {
 			// 执行一个简单的查询来建立连接
@@ -266,7 +266,7 @@ func WarmupConnectionPool(db *sql.DB, targetConnections int) error {
 			}
 		}(i)
 	}
-	
+
 	// 等待所有连接完成或失败
 	successCount := 0
 	errorCount := 0
@@ -278,18 +278,18 @@ func WarmupConnectionPool(db *sql.DB, targetConnections int) error {
 			errorCount++
 		}
 	}
-	
+
 	log.Printf("Connection pool warmup completed: %d successful, %d failed", successCount, errorCount)
-	
+
 	// 获取连接池统计信息
 	stats := db.Stats()
-	log.Printf("Connection pool stats after warmup: Open=%d, InUse=%d, Idle=%d", 
+	log.Printf("Connection pool stats after warmup: Open=%d, InUse=%d, Idle=%d",
 		stats.OpenConnections, stats.InUse, stats.Idle)
-	
+
 	if errorCount > targetConnections/2 {
 		return fmt.Errorf("too many connection failures during warmup: %d/%d", errorCount, targetConnections)
 	}
-	
+
 	return nil
 }
 
@@ -297,14 +297,14 @@ func WarmupConnectionPool(db *sql.DB, targetConnections int) error {
 func GetConnectionPoolStats(db *sql.DB) map[string]interface{} {
 	stats := db.Stats()
 	return map[string]interface{}{
-		"max_open_connections":     stats.MaxOpenConnections,
-		"open_connections":         stats.OpenConnections,
-		"in_use":                   stats.InUse,
-		"idle":                     stats.Idle,
-		"wait_count":               stats.WaitCount,
-		"wait_duration_ms":         stats.WaitDuration.Milliseconds(),
-		"max_idle_closed":          stats.MaxIdleClosed,
-		"max_idle_time_closed":     stats.MaxIdleTimeClosed,
-		"max_lifetime_closed":      stats.MaxLifetimeClosed,
+		"max_open_connections": stats.MaxOpenConnections,
+		"open_connections":     stats.OpenConnections,
+		"in_use":               stats.InUse,
+		"idle":                 stats.Idle,
+		"wait_count":           stats.WaitCount,
+		"wait_duration_ms":     stats.WaitDuration.Milliseconds(),
+		"max_idle_closed":      stats.MaxIdleClosed,
+		"max_idle_time_closed": stats.MaxIdleTimeClosed,
+		"max_lifetime_closed":  stats.MaxLifetimeClosed,
 	}
 }

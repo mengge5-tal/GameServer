@@ -93,9 +93,19 @@ func (c *Connection) CheckTableStructure() error {
 
 // SetAllUsersOffline sets all users to offline status on startup
 func (c *Connection) SetAllUsersOffline() error {
-	// This assumes there's an online status tracking mechanism
-	// For now, this is a placeholder
-	log.Println("All users set to offline status")
+	query := "UPDATE user SET online_status = 0 WHERE online_status = 1"
+	result, err := c.db.Exec(query)
+	if err != nil {
+		return fmt.Errorf("failed to set all users offline: %w", err)
+	}
+	
+	rowsAffected, err := result.RowsAffected()
+	if err != nil {
+		log.Printf("Could not get rows affected count: %v", err)
+	} else {
+		log.Printf("Set %d users to offline status", rowsAffected)
+	}
+	
 	return nil
 }
 

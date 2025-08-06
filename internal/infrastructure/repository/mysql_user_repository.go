@@ -1,9 +1,9 @@
 package repository
 
 import (
-	"database/sql"
 	"GameServer/internal/domain/entity"
 	"GameServer/internal/domain/repository"
+	"database/sql"
 )
 
 // mysqlUserRepository implements UserRepository
@@ -19,8 +19,8 @@ func NewMySQLUserRepository(db *sql.DB) repository.UserRepository {
 // GetByID retrieves a user by ID
 func (r *mysqlUserRepository) GetByID(id int) (*entity.User, error) {
 	user := &entity.User{}
-	query := "SELECT userid, username FROM user WHERE userid = ?"
-	err := r.db.QueryRow(query, id).Scan(&user.ID, &user.Username)
+	query := "SELECT userid, username, online_status FROM user WHERE userid = ?"
+	err := r.db.QueryRow(query, id).Scan(&user.ID, &user.Username, &user.OnlineStatus)
 	if err != nil {
 		if err == sql.ErrNoRows {
 			return nil, nil
@@ -33,8 +33,8 @@ func (r *mysqlUserRepository) GetByID(id int) (*entity.User, error) {
 // GetByUsername retrieves a user by username
 func (r *mysqlUserRepository) GetByUsername(username string) (*entity.User, error) {
 	user := &entity.User{}
-	query := "SELECT userid, username FROM user WHERE username = ?"
-	err := r.db.QueryRow(query, username).Scan(&user.ID, &user.Username)
+	query := "SELECT userid, username, online_status FROM user WHERE username = ?"
+	err := r.db.QueryRow(query, username).Scan(&user.ID, &user.Username, &user.OnlineStatus)
 	if err != nil {
 		if err == sql.ErrNoRows {
 			return nil, nil
@@ -46,24 +46,24 @@ func (r *mysqlUserRepository) GetByUsername(username string) (*entity.User, erro
 
 // Create creates a new user
 func (r *mysqlUserRepository) Create(user *entity.User) error {
-	query := "INSERT INTO user (username, passward) VALUES (?, ?)"
+	query := "INSERT INTO user (username, password) VALUES (?, ?)"
 	result, err := r.db.Exec(query, user.Username, user.Password)
 	if err != nil {
 		return err
 	}
-	
+
 	id, err := result.LastInsertId()
 	if err != nil {
 		return err
 	}
-	
+
 	user.ID = int(id)
 	return nil
 }
 
 // Update updates an existing user
 func (r *mysqlUserRepository) Update(user *entity.User) error {
-	query := "UPDATE user SET username = ?, passward = ? WHERE userid = ?"
+	query := "UPDATE user SET username = ?, password = ? WHERE userid = ?"
 	_, err := r.db.Exec(query, user.Username, user.Password, user.ID)
 	return err
 }
@@ -90,16 +90,23 @@ func (r *mysqlUserRepository) Exists(username string) (bool, error) {
 func (r *mysqlUserRepository) VerifyCredentials(username, password string) (*entity.User, error) {
 	user := &entity.User{}
 	var storedPassword string
-	query := "SELECT userid, username, passward FROM user WHERE username = ?"
-	err := r.db.QueryRow(query, username).Scan(&user.ID, &user.Username, &storedPassword)
+	query := "SELECT userid, username, password, online_status FROM user WHERE username = ?"
+	err := r.db.QueryRow(query, username).Scan(&user.ID, &user.Username, &storedPassword, &user.OnlineStatus)
 	if err != nil {
 		if err == sql.ErrNoRows {
 			return nil, nil
 		}
 		return nil, err
 	}
-	
+
 	// Store the hashed password for verification
 	user.Password = storedPassword
 	return user, nil
+}
+
+// UpdateOnlineStatus updates the online status of a user
+func (r *mysqlUserRepository) UpdateOnlineStatus(userID int, status int) error {
+	query := "UPDATE user SET online_status = ? WHERE userid = ?"
+	_, err := r.db.Exec(query, status, userID)
+	return err
 }

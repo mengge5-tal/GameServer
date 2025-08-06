@@ -27,7 +27,7 @@ type Hub struct {
 	Router MessageRouter
 
 	// Mutex for thread-safe operations
-	mutex sync.RWMutex
+	Mutex sync.RWMutex
 
 	// Services
 	Services *ServiceContainer
@@ -74,8 +74,8 @@ func (h *Hub) Run() {
 
 // registerClient registers a new client
 func (h *Hub) registerClient(client *Client) {
-	h.mutex.Lock()
-	defer h.mutex.Unlock()
+	h.Mutex.Lock()
+	defer h.Mutex.Unlock()
 
 	h.Clients[client] = true
 	log.Printf("Client %s connected", client.ID)
@@ -83,8 +83,8 @@ func (h *Hub) registerClient(client *Client) {
 
 // unregisterClient unregisters a client
 func (h *Hub) unregisterClient(client *Client) {
-	h.mutex.Lock()
-	defer h.mutex.Unlock()
+	h.Mutex.Lock()
+	defer h.Mutex.Unlock()
 
 	if _, ok := h.Clients[client]; !ok {
 		return
@@ -98,7 +98,12 @@ func (h *Hub) unregisterClient(client *Client) {
 		delete(h.UserClients, client.UserID)
 		
 		// Set user offline status
-		// This could be handled by a service call
+		if h.Services.AuthService != nil {
+			if err := h.Services.AuthService.Logout(client.UserID); err != nil {
+				log.Printf("Failed to set user %d offline: %v", client.UserID, err)
+			}
+		}
+		
 		log.Printf("User %d disconnected", client.UserID)
 	}
 
@@ -110,8 +115,8 @@ func (h *Hub) unregisterClient(client *Client) {
 
 // broadcastMessage broadcasts a message to all clients
 func (h *Hub) broadcastMessage(message []byte) {
-	h.mutex.RLock()
-	defer h.mutex.RUnlock()
+	h.Mutex.RLock()
+	defer h.Mutex.RUnlock()
 
 	for client := range h.Clients {
 		select {
@@ -122,6 +127,12 @@ func (h *Hub) broadcastMessage(message []byte) {
 			delete(h.Clients, client)
 			if client.UserID > 0 {
 				delete(h.UserClients, client.UserID)
+				// Set user offline status when force-disconnecting
+				if h.Services.AuthService != nil {
+					if err := h.Services.AuthService.Logout(client.UserID); err != nil {
+						log.Printf("Failed to set user %d offline during force disconnect: %v", client.UserID, err)
+					}
+				}
 			}
 		}
 	}
@@ -129,22 +140,22 @@ func (h *Hub) broadcastMessage(message []byte) {
 
 // SetUserClient associates a user ID with a client
 func (h *Hub) SetUserClient(userID int, client *Client) {
-	h.mutex.Lock()
-	defer h.mutex.Unlock()
+	h.Mutex.Lock()
+	defer h.Mutex.Unlock()
 	h.UserClients[userID] = client
 }
 
 // GetClientByUserID retrieves a client by user ID
 func (h *Hub) GetClientByUserID(userID int) *Client {
-	h.mutex.RLock()
-	defer h.mutex.RUnlock()
+	h.Mutex.RLock()
+	defer h.Mutex.RUnlock()
 	return h.UserClients[userID]
 }
 
 // RemoveUserClient removes a user client mapping
 func (h *Hub) RemoveUserClient(userID int) {
-	h.mutex.Lock()
-	defer h.mutex.Unlock()
+	h.Mutex.Lock()
+	defer h.Mutex.Unlock()
 	delete(h.UserClients, userID)
 }
 

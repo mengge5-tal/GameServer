@@ -94,8 +94,8 @@ func main() {
 	}()
 
 	// Wait for shutdown signal
-	waitForShutdown()
-	log.Println("Server shutting down gracefully...")
+	waitForShutdown(hub, dbConnection)
+	log.Println("Server shutdown completed")
 }
 
 // setupRoutes configures all HTTP routes
@@ -159,8 +159,69 @@ func setupRoutes(hub *websocket.Hub, container *container.Container, cfg *config
 }
 
 // waitForShutdown waits for interrupt signals for graceful shutdown
-func waitForShutdown() {
+func waitForShutdown(hub *websocket.Hub, dbConnection *database.Connection) {
 	c := make(chan os.Signal, 1)
 	signal.Notify(c, os.Interrupt, syscall.SIGTERM)
 	<-c
+	
+	log.Println("Shutdown signal received, starting graceful shutdown...")
+	
+	// Close WebSocket hub to disconnect all clients and set users offline
+	if hub != nil {
+		log.Println("Closing WebSocket hub...")
+		closeHub(hub)
+	}
+	
+	// Set all remaining users offline in database
+	if dbConnection != nil {
+		log.Println("Setting all users offline...")
+		if err := dbConnection.SetAllUsersOffline(); err != nil {
+			log.Printf("Warning: Failed to set users offline during shutdown: %v", err)
+		}
+	}
+	
+	log.Println("Graceful shutdown completed")
+}
+
+// closeHub closes the hub and disconnects all clients
+func closeHub(hub *websocket.Hub) {
+	// Send close signal to all connected clients
+	hub.Mutex.Lock()
+	defer hub.Mutex.Unlock()
+	
+	log.Printf("Disconnecting %d connected clients...", len(hub.Clients))
+	
+	for client := range hub.Clients {
+		if client.UserID > 0 {
+			// Set user offline through auth service
+			if hub.Services != nil && hub.Services.AuthService != nil {
+				if err := hub.Services.AuthService.Logout(client.UserID); err != nil {
+					log.Printf("Warning: Failed to logout user %d during shutdown: %v", client.UserID, err)
+				} else {
+					log.Printf("User %d logged out during shutdown", client.UserID)
+				}
+			}
+		}
+		
+		// Close client connection
+		select {
+		case client.Send <- []byte(`{"success":false,"code":1008,"message":"Server shutting down","data":null}`):
+		default:
+		}
+		close(client.Send)
+		
+		// Close WebSocket connection
+		if client.Conn != nil {
+			client.Conn.Close()
+		}
+	}
+	
+	// Clear all client mappings
+	for client := range hub.Clients {
+		delete(hub.Clients, client)
+	}
+	
+	for userID := range hub.UserClients {
+		delete(hub.UserClients, userID)
+	}
 }

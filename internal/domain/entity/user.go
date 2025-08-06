@@ -4,9 +4,10 @@ import "time"
 
 // User represents a user entity in the domain
 type User struct {
-	ID       int    `json:"userid"`
-	Username string `json:"username"`
-	Password string `json:"-"` // Never expose password in JSON
+	ID           int    `json:"userid"`
+	Username     string `json:"username"`
+	Password     string `json:"-"` // Never expose password in JSON
+	OnlineStatus int    `json:"online_status"`
 }
 
 // Validate validates user data

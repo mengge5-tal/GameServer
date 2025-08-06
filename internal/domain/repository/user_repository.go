@@ -14,6 +14,9 @@ type UserRepository interface {
 
 	// Authentication
 	VerifyCredentials(username, password string) (*entity.User, error)
+	
+	// Online status
+	UpdateOnlineStatus(userID int, status int) error
 }
 
 // PlayerRepository defines the interface for player information data access

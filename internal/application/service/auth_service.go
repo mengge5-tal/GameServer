@@ -64,6 +64,12 @@ func (s *AuthService) Login(req *dto.LoginRequest) (*dto.LoginResponse, error) {
 		return nil, entity.NewDomainError("invalid username or password")
 	}
 
+	// Update online status to 1 (online)
+	if err := s.userRepo.UpdateOnlineStatus(user.ID, 1); err != nil {
+		// Log error but don't fail login
+		// In production, you might want to handle this differently
+	}
+
 	// Cache user
 	s.cacheService.SetUser(cacheKey, user)
 
@@ -169,6 +175,11 @@ func (s *AuthService) GetUserProfile(userID int) (*dto.UserProfile, error) {
 
 // Logout handles user logout
 func (s *AuthService) Logout(userID int) error {
+	// Update online status to 0 (offline)
+	if err := s.userRepo.UpdateOnlineStatus(userID, 0); err != nil {
+		// Log error but continue with logout process
+	}
+
 	// Clear cache
 	user, err := s.userRepo.GetByID(userID)
 	if err == nil && user != nil {
@@ -176,7 +187,6 @@ func (s *AuthService) Logout(userID int) error {
 		s.cacheService.Delete(cacheKey)
 	}
 	
-	// Additional logout logic can be added here
 	return nil
 }
 
