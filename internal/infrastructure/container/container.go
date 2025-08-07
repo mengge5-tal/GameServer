@@ -17,11 +17,12 @@ type Container struct {
 	Database *sql.DB
 	
 	// Services
-	CacheService   cache.CacheService
-	AuthService    *service.AuthService
-	PlayerService  *service.PlayerService
-	FriendService  *service.FriendService
-	RankingService *service.RankingService
+	CacheService     cache.CacheService
+	AuthService      *service.AuthService
+	PlayerService    *service.PlayerService
+	FriendService    *service.FriendService
+	RankingService   *service.RankingService
+	UserEquipService *service.UserEquipService
 	
 	// Repositories
 	UserRepo        repository.UserRepository
@@ -31,6 +32,7 @@ type Container struct {
 	EquipmentRepo   repository.EquipmentRepository
 	SourceStoneRepo repository.SourceStoneRepository
 	ExperienceRepo  repository.ExperienceRepository
+	UserEquipRepo   repository.UserEquipRepository
 	
 	// Domain Services
 	AuthDomainService domainService.AuthDomainService
@@ -64,6 +66,7 @@ func (c *Container) initializeRepositories() error {
 	c.EquipmentRepo = infraRepo.NewMySQLEquipmentRepository(c.Database)
 	c.SourceStoneRepo = infraRepo.NewMySQLSourceStoneRepository(c.Database)
 	c.ExperienceRepo = infraRepo.NewMySQLExperienceRepository(c.Database)
+	c.UserEquipRepo = infraRepo.NewMySQLUserEquipRepository(c.Database)
 	
 	return nil
 }
@@ -103,16 +106,23 @@ func (c *Container) initializeServices() error {
 		c.PlayerRepo,
 	)
 	
+	c.UserEquipService = service.NewUserEquipService(
+		c.UserEquipRepo,
+		c.EquipmentRepo,
+		c.UserRepo,
+	)
+	
 	return nil
 }
 
 // GetWebSocketServices returns services formatted for WebSocket handlers
 func (c *Container) GetWebSocketServices() *websocket.ServiceContainer {
 	return &websocket.ServiceContainer{
-		AuthService:    c.AuthService,
-		PlayerService:  c.PlayerService,
-		FriendService:  c.FriendService,
-		RankingService: c.RankingService,
+		AuthService:      c.AuthService,
+		PlayerService:    c.PlayerService,
+		FriendService:    c.FriendService,
+		RankingService:   c.RankingService,
+		UserEquipService: c.UserEquipService,
 	}
 }
 

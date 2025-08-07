@@ -1,0 +1,267 @@
+{
+  "userEquipTestExamples": {
+    "description": "PostMan WebSocket 测试 UserEquip 功能的 JSON 示例",
+    "websocketUrl": "ws://101.201.51.135:8080/ws",
+    
+    "1_获取用户所有穿戴装备": {
+      "type": "userequip",
+      "action": "getEquippedItems",
+      "data": {},
+      "requestId": "userequip-001",
+      "timestamp": 1640995200
+    },
+    
+    "2_装备道具到指定部位": {
+      "type": "userequip",
+      "action": "equipItem",
+      "data": {
+        "equip_slot": "衣服",
+        "equipid": 123
+      },
+      "requestId": "userequip-002",
+      "timestamp": 1640995200
+    },
+    
+    "3_卸下指定部位的装备": {
+      "type": "userequip",
+      "action": "unequipItem",
+      "data": {
+        "equip_slot": "衣服"
+      },
+      "requestId": "userequip-003", 
+      "timestamp": 1640995200
+    },
+    
+    "4_获取指定部位的装备": {
+      "type": "userequip",
+      "action": "getEquippedBySlot",
+      "data": {
+        "equip_slot": "头盔"
+      },
+      "requestId": "userequip-004",
+      "timestamp": 1640995200
+    },
+    
+    "5_获取装备总属性": {
+      "type": "userequip",
+      "action": "getEquipmentStats",
+      "data": {},
+      "requestId": "userequip-005",
+      "timestamp": 1640995200
+    },
+    
+    "装备部位选项": [
+      "衣服",
+      "鞋子", 
+      "戒指",
+      "项链",
+      "头盔",
+      "手套"
+    ],
+    
+    "测试流程示例": {
+      "步骤1_用户登录": {
+        "type": "auth",
+        "action": "login",
+        "data": {
+          "username": "testuser",
+          "password": "password123"
+        },
+        "requestId": "login-001",
+        "timestamp": 1640995200
+      },
+      
+      "步骤2_创建装备": {
+        "type": "equip",
+        "action": "saveEquip",
+        "data": {
+          "quality": 1,
+          "damage": 100,
+          "crit": 15,
+          "critdamage": 150,
+          "damagespeed": 120,
+          "bloodsuck": 5,
+          "hp": 200,
+          "movespeed": 110,
+          "suitid": 1,
+          "suitname": "战士套装",
+          "equip_type_id": 1,
+          "equip_type_name": "护甲",
+          "defense": 80,
+          "goodfortune": 10,
+          "type": 1
+        },
+        "requestId": "create-equip-001",
+        "timestamp": 1640995200
+      },
+      
+      "步骤3_装备道具": {
+        "type": "userequip", 
+        "action": "equipItem",
+        "data": {
+          "equip_slot": "衣服",
+          "equipid": 1
+        },
+        "requestId": "equip-item-001",
+        "timestamp": 1640995200
+      },
+      
+      "步骤4_查看装备": {
+        "type": "userequip",
+        "action": "getEquippedItems", 
+        "data": {},
+        "requestId": "get-equipped-001",
+        "timestamp": 1640995200
+      }
+    },
+    
+    "完整测试用例": {
+      "测试用例1_装备衣服": {
+        "description": "装备一件衣服到衣服槽位",
+        "request": {
+          "type": "userequip",
+          "action": "equipItem",
+          "data": {
+            "equip_slot": "衣服",
+            "equipid": 101
+          },
+          "requestId": "test-equip-cloth",
+          "timestamp": 1640995200
+        },
+        "expected_response": {
+          "success": true,
+          "code": 0,
+          "message": "Success",
+          "data": {
+            "message": "Item equipped successfully"
+          }
+        }
+      },
+      
+      "测试用例2_装备头盔": {
+        "description": "装备一个头盔到头盔槽位",
+        "request": {
+          "type": "userequip",
+          "action": "equipItem",
+          "data": {
+            "equip_slot": "头盔", 
+            "equipid": 102
+          },
+          "requestId": "test-equip-helmet",
+          "timestamp": 1640995200
+        }
+      },
+      
+      "测试用例3_装备鞋子": {
+        "description": "装备鞋子到鞋子槽位",
+        "request": {
+          "type": "userequip",
+          "action": "equipItem",
+          "data": {
+            "equip_slot": "鞋子",
+            "equipid": 103
+          },
+          "requestId": "test-equip-shoes",
+          "timestamp": 1640995200
+        }
+      },
+      
+      "测试用例4_卸下装备": {
+        "description": "卸下衣服槽位的装备",
+        "request": {
+          "type": "userequip",
+          "action": "unequipItem",
+          "data": {
+            "equip_slot": "衣服"
+          },
+          "requestId": "test-unequip-cloth",
+          "timestamp": 1640995200
+        }
+      },
+      
+      "测试用例5_查看总属性": {
+        "description": "获取所有装备的总属性加成",
+        "request": {
+          "type": "userequip",
+          "action": "getEquipmentStats",
+          "data": {},
+          "requestId": "test-get-stats",
+          "timestamp": 1640995200
+        },
+        "expected_response": {
+          "success": true,
+          "code": 0,
+          "message": "Success",
+          "data": {
+            "damage": 300,
+            "crit": 45,
+            "critdamage": 450,
+            "damagespeed": 360,
+            "bloodsuck": 15,
+            "hp": 600,
+            "movespeed": 330,
+            "defense": 240,
+            "goodfortune": 30
+          }
+        }
+      }
+    },
+    
+    "错误测试用例": {
+      "无效装备槽位": {
+        "request": {
+          "type": "userequip",
+          "action": "equipItem",
+          "data": {
+            "equip_slot": "无效槽位",
+            "equipid": 101
+          },
+          "requestId": "test-invalid-slot",
+          "timestamp": 1640995200
+        },
+        "expected_response": {
+          "success": false,
+          "code": 5000,
+          "message": "invalid equipment slot: 无效槽位"
+        }
+      },
+      
+      "不存在的装备ID": {
+        "request": {
+          "type": "userequip",
+          "action": "equipItem",
+          "data": {
+            "equip_slot": "衣服",
+            "equipid": 99999
+          },
+          "requestId": "test-invalid-equipid",
+          "timestamp": 1640995200
+        },
+        "expected_response": {
+          "success": false,
+          "code": 5000,
+          "message": "equipment not found"
+        }
+      },
+      
+      "装备不属于用户": {
+        "description": "尝试装备不属于当前用户的装备",
+        "request": {
+          "type": "userequip",
+          "action": "equipItem",
+          "data": {
+            "equip_slot": "衣服",
+            "equipid": 999
+          },
+          "requestId": "test-not-owner",
+          "timestamp": 1640995200
+        },
+        "expected_response": {
+          "success": false,
+          "code": 5000,
+          "message": "equipment does not belong to user"
+        }
+      }
+    }
+  }
+}

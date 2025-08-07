@@ -61,6 +61,23 @@ func CheckDatabaseTables(db *sql.DB) error {
 func CreateMissingTables(db *sql.DB) error {
 	log.Println("Creating missing tables...")
 
+	// 用户装备表
+	userEquipTable := `
+	CREATE TABLE IF NOT EXISTS user_equip (
+		id INT AUTO_INCREMENT PRIMARY KEY,
+		userid INT NOT NULL,
+		equip_slot ENUM('衣服', '鞋子', '戒指', '项链', '头盔', '手套') NOT NULL,
+		equipid INT NULL,
+		FOREIGN KEY (userid) REFERENCES user(userid) ON DELETE CASCADE,
+		FOREIGN KEY (equipid) REFERENCES equip(equipid) ON DELETE SET NULL,
+		UNIQUE KEY unique_user_slot (userid, equip_slot)
+	)`
+
+	if _, err := db.Exec(userEquipTable); err != nil {
+		return fmt.Errorf("failed to create user_equip table: %v", err)
+	}
+	log.Println("User_equip table created/verified")
+
 	// 好友关系表
 	friendTable := `
 	CREATE TABLE IF NOT EXISTS friend (

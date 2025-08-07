@@ -347,3 +347,107 @@ func (h *RankingHandler) handleGetRank(client *Client, message *valueobject.Mess
 	}
 	return valueobject.NewSuccessResponse(message.RequestID, ranking)
 }
+
+// UserEquipHandler handles user equipment messages
+type UserEquipHandler struct {
+	userEquipService UserEquipServiceInterface
+}
+
+// NewUserEquipHandler creates a new user equipment handler
+func NewUserEquipHandler(userEquipService UserEquipServiceInterface) *UserEquipHandler {
+	return &UserEquipHandler{userEquipService: userEquipService}
+}
+
+// Handle handles user equipment messages
+func (h *UserEquipHandler) Handle(client *Client, message *valueobject.Message) *valueobject.Response {
+	switch message.Action {
+	case valueobject.ActionGetEquippedItems:
+		return h.handleGetEquippedItems(client, message)
+	case valueobject.ActionEquipItem:
+		return h.handleEquipItem(client, message)
+	case valueobject.ActionUnequipItem:
+		return h.handleUnequipItem(client, message)
+	case valueobject.ActionGetEquipmentStats:
+		return h.handleGetEquipmentStats(client, message)
+	case valueobject.ActionGetEquippedBySlot:
+		return h.handleGetEquippedBySlot(client, message)
+	default:
+		return valueobject.NewErrorResponse(message.RequestID, valueobject.CodeInvalidRequest, "Unknown user equipment action")
+	}
+}
+
+func (h *UserEquipHandler) handleGetEquippedItems(client *Client, message *valueobject.Message) *valueobject.Response {
+	equippedItems, err := h.userEquipService.GetUserEquippedItems(client.GetUserID())
+	if err != nil {
+		return valueobject.NewErrorResponse(message.RequestID, valueobject.CodeInternalError, err.Error())
+	}
+	return valueobject.NewSuccessResponse(message.RequestID, equippedItems)
+}
+
+func (h *UserEquipHandler) handleEquipItem(client *Client, message *valueobject.Message) *valueobject.Response {
+	var req struct {
+		EquipSlot string `json:"equip_slot"`
+		EquipID   int    `json:"equipid"`
+	}
+	if err := json.Unmarshal(message.Data, &req); err != nil {
+		return valueobject.NewErrorResponse(message.RequestID, valueobject.CodeInvalidRequest, "Invalid equip item data")
+	}
+
+	if req.EquipSlot == "" || req.EquipID <= 0 {
+		return valueobject.NewErrorResponse(message.RequestID, valueobject.CodeInvalidRequest, "Equipment slot and equipment ID are required")
+	}
+
+	err := h.userEquipService.EquipItem(client.GetUserID(), req.EquipSlot, req.EquipID)
+	if err != nil {
+		return valueobject.NewErrorResponse(message.RequestID, valueobject.CodeInternalError, err.Error())
+	}
+
+	return valueobject.NewSuccessResponse(message.RequestID, map[string]string{"message": "Item equipped successfully"})
+}
+
+func (h *UserEquipHandler) handleUnequipItem(client *Client, message *valueobject.Message) *valueobject.Response {
+	var req struct {
+		EquipSlot string `json:"equip_slot"`
+	}
+	if err := json.Unmarshal(message.Data, &req); err != nil {
+		return valueobject.NewErrorResponse(message.RequestID, valueobject.CodeInvalidRequest, "Invalid unequip item data")
+	}
+
+	if req.EquipSlot == "" {
+		return valueobject.NewErrorResponse(message.RequestID, valueobject.CodeInvalidRequest, "Equipment slot is required")
+	}
+
+	err := h.userEquipService.UnequipItem(client.GetUserID(), req.EquipSlot)
+	if err != nil {
+		return valueobject.NewErrorResponse(message.RequestID, valueobject.CodeInternalError, err.Error())
+	}
+
+	return valueobject.NewSuccessResponse(message.RequestID, map[string]string{"message": "Item unequipped successfully"})
+}
+
+func (h *UserEquipHandler) handleGetEquipmentStats(client *Client, message *valueobject.Message) *valueobject.Response {
+	stats, err := h.userEquipService.GetEquipmentStats(client.GetUserID())
+	if err != nil {
+		return valueobject.NewErrorResponse(message.RequestID, valueobject.CodeInternalError, err.Error())
+	}
+	return valueobject.NewSuccessResponse(message.RequestID, stats)
+}
+
+func (h *UserEquipHandler) handleGetEquippedBySlot(client *Client, message *valueobject.Message) *valueobject.Response {
+	var req struct {
+		EquipSlot string `json:"equip_slot"`
+	}
+	if err := json.Unmarshal(message.Data, &req); err != nil {
+		return valueobject.NewErrorResponse(message.RequestID, valueobject.CodeInvalidRequest, "Invalid slot data")
+	}
+
+	if req.EquipSlot == "" {
+		return valueobject.NewErrorResponse(message.RequestID, valueobject.CodeInvalidRequest, "Equipment slot is required")
+	}
+
+	equipment, err := h.userEquipService.GetEquippedItemsBySlot(client.GetUserID(), req.EquipSlot)
+	if err != nil {
+		return valueobject.NewErrorResponse(message.RequestID, valueobject.CodeInternalError, err.Error())
+	}
+	return valueobject.NewSuccessResponse(message.RequestID, equipment)
+}

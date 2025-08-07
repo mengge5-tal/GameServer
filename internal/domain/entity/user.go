@@ -97,6 +97,43 @@ type Experience struct {
 	Value int `json:"value"`
 }
 
+// UserEquip represents equipped items for a user
+type UserEquip struct {
+	ID        int    `json:"id"`
+	UserID    int    `json:"userid"`
+	EquipSlot string `json:"equip_slot"` // 衣服, 鞋子, 戒指, 项链, 头盔, 手套
+	EquipID   *int   `json:"equipid"`    // nullable, nil means no equipment in this slot
+}
+
+// ValidEquipSlots defines valid equipment slot types
+var ValidEquipSlots = []string{"衣服", "鞋子", "戒指", "项链", "头盔", "手套"}
+
+// Validate validates UserEquip data
+func (ue *UserEquip) Validate() error {
+	if ue.UserID <= 0 {
+		return NewDomainError("user ID must be positive")
+	}
+	
+	// Check if equip slot is valid
+	isValidSlot := false
+	for _, slot := range ValidEquipSlots {
+		if ue.EquipSlot == slot {
+			isValidSlot = true
+			break
+		}
+	}
+	if !isValidSlot {
+		return NewDomainError("invalid equipment slot type")
+	}
+	
+	// If EquipID is provided, it must be positive
+	if ue.EquipID != nil && *ue.EquipID <= 0 {
+		return NewDomainError("equipment ID must be positive")
+	}
+	
+	return nil
+}
+
 // DomainError represents domain-specific errors
 type DomainError struct {
 	Message string

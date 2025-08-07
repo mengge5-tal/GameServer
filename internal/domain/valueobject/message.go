@@ -12,6 +12,7 @@ const (
 	MessageTypeAuth      MessageType = "auth"
 	MessageTypeHeartbeat MessageType = "heartbeat"
 	MessageTypeEquip     MessageType = "equip"
+	MessageTypeUserEquip MessageType = "userequip"
 	MessageTypePlayer    MessageType = "player"
 	MessageTypeFriend    MessageType = "friend"
 	MessageTypeRank      MessageType = "rank"
@@ -35,6 +36,13 @@ const (
 	ActionSaveEquip   MessageAction = "saveEquip"
 	ActionDeleteEquip MessageAction = "deleteEquip"
 	ActionDelEquip    MessageAction = "delEquip"
+
+	// User Equipment actions
+	ActionGetEquippedItems  MessageAction = "getEquippedItems"
+	ActionEquipItem         MessageAction = "equipItem"
+	ActionUnequipItem       MessageAction = "unequipItem"
+	ActionGetEquipmentStats MessageAction = "getEquipmentStats"
+	ActionGetEquippedBySlot MessageAction = "getEquippedBySlot"
 
 	// Player actions
 	ActionGetPlayerInfo MessageAction = "getPlayerInfo"

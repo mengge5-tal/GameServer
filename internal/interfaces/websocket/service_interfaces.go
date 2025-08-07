@@ -38,3 +38,12 @@ type RankingServiceInterface interface {
 	UpdateUserRankings(userID int) error
 	RefreshAllRankings() error
 }
+
+// UserEquipServiceInterface defines the interface for user equipment service used by websocket handlers
+type UserEquipServiceInterface interface {
+	GetUserEquippedItems(userID int) (map[string]interface{}, error)
+	EquipItem(userID int, slot string, equipID int) error
+	UnequipItem(userID int, slot string) error
+	GetEquippedItemsBySlot(userID int, slot string) (interface{}, error)
+	GetEquipmentStats(userID int) (map[string]int, error)
+}

@@ -98,6 +98,13 @@ func (r *messageRouter) registerHandlers() {
 	// Ranking handlers
 	r.register(valueobject.MessageTypeRank, valueobject.ActionGetAllRank, NewRankingHandler(r.services.RankingService))
 	r.register(valueobject.MessageTypeRank, valueobject.ActionGetRank, NewRankingHandler(r.services.RankingService))
+
+	// User Equipment handlers
+	r.register(valueobject.MessageTypeUserEquip, valueobject.ActionGetEquippedItems, NewUserEquipHandler(r.services.UserEquipService))
+	r.register(valueobject.MessageTypeUserEquip, valueobject.ActionEquipItem, NewUserEquipHandler(r.services.UserEquipService))
+	r.register(valueobject.MessageTypeUserEquip, valueobject.ActionUnequipItem, NewUserEquipHandler(r.services.UserEquipService))
+	r.register(valueobject.MessageTypeUserEquip, valueobject.ActionGetEquipmentStats, NewUserEquipHandler(r.services.UserEquipService))
+	r.register(valueobject.MessageTypeUserEquip, valueobject.ActionGetEquippedBySlot, NewUserEquipHandler(r.services.UserEquipService))
 }
 
 // register registers a handler for a message type and action

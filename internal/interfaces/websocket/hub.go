@@ -35,10 +35,11 @@ type Hub struct {
 
 // ServiceContainer holds all application services
 type ServiceContainer struct {
-	AuthService    AuthServiceInterface
-	PlayerService  PlayerServiceInterface
-	FriendService  FriendServiceInterface
-	RankingService RankingServiceInterface
+	AuthService      AuthServiceInterface
+	PlayerService    PlayerServiceInterface
+	FriendService    FriendServiceInterface
+	RankingService   RankingServiceInterface
+	UserEquipService UserEquipServiceInterface
 }
 
 // NewHub creates a new Hub instance
