@@ -174,21 +174,55 @@ func CreateMissingTables(db *sql.DB) error {
 		log.Println("online_status column already exists in user table")
 	}
 
-	// 检查并添加装备表的type字段
-	var typeColumnExists bool
-	err = db.QueryRow("SELECT COUNT(*) > 0 FROM information_schema.columns WHERE table_schema = DATABASE() AND table_name = 'equip' AND column_name = 'type'").Scan(&typeColumnExists)
+	// 检查并添加装备表的字段
+	equipColumns := []struct {
+		name         string
+		definition   string
+		defaultValue string
+	}{
+		{"type", "INT DEFAULT 1", "1"},
+		{"suitid", "INT DEFAULT 0", "0"},
+		{"suitname", "VARCHAR(255) DEFAULT ''", "''"},
+		{"equip_type_id", "INT DEFAULT 0", "0"},
+		{"equip_type_name", "VARCHAR(255) DEFAULT ''", "''"},
+	}
 
-	if err != nil {
-		log.Printf("Warning: failed to check type column existence: %v", err)
-	} else if !typeColumnExists {
-		_, err = db.Exec("ALTER TABLE equip ADD COLUMN type INT DEFAULT 1")
+	for _, column := range equipColumns {
+		var columnExists bool
+		err = db.QueryRow("SELECT COUNT(*) > 0 FROM information_schema.columns WHERE table_schema = DATABASE() AND table_name = 'equip' AND column_name = ?",
+			column.name).Scan(&columnExists)
+
 		if err != nil {
-			log.Printf("Warning: failed to add type column to equip table: %v", err)
+			log.Printf("Warning: failed to check %s column existence: %v", column.name, err)
+		} else if !columnExists {
+			_, err = db.Exec(fmt.Sprintf("ALTER TABLE equip ADD COLUMN %s %s", column.name, column.definition))
+			if err != nil {
+				log.Printf("Warning: failed to add %s column to equip table: %v", column.name, err)
+			} else {
+				log.Printf("Added %s column to equip table", column.name)
+			}
 		} else {
-			log.Println("Added type column to equip table")
+			log.Printf("%s column already exists in equip table", column.name)
 		}
-	} else {
-		log.Println("Type column already exists in equip table")
+	}
+
+	// 检查并移除已弃用的equipname字段
+	var equipnameExists bool
+	err = db.QueryRow("SELECT COUNT(*) > 0 FROM information_schema.columns WHERE table_schema = DATABASE() AND table_name = 'equip' AND column_name = 'equipname'").Scan(&equipnameExists)
+	if err != nil {
+		log.Printf("Warning: failed to check equipname column existence: %v", err)
+	} else if equipnameExists {
+		log.Println("Warning: equipname column still exists in equip table, consider removing it manually")
+		// 不自动删除列，让用户手动处理，以防数据丢失
+	}
+
+	// 检查并修改equipid字段为自增
+	var isAutoIncrement bool
+	err = db.QueryRow("SELECT COUNT(*) > 0 FROM information_schema.columns WHERE table_schema = DATABASE() AND table_name = 'equip' AND column_name = 'equipid' AND extra LIKE '%auto_increment%'").Scan(&isAutoIncrement)
+	if err != nil {
+		log.Printf("Warning: failed to check equipid auto_increment: %v", err)
+	} else if !isAutoIncrement {
+		log.Println("Warning: equipid is not auto_increment, consider modifying it manually: ALTER TABLE equip MODIFY equipid INT AUTO_INCREMENT PRIMARY KEY")
 	}
 
 	log.Println("All missing tables and indexes created successfully")

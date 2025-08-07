@@ -22,7 +22,7 @@ fi
 
 echo "✅ Environment variables loaded"
 echo "🗄️  Database: $DB_HOST:$DB_PORT/$DB_NAME"
-echo "🌐 Server will start on: ${SERVER_HOST:-localhost}:${SERVER_PORT:-8080}"
+echo "🌐 Server will start on: ${SERVER_HOST:-101.201.51.135}:${SERVER_PORT:-8080}"
 
 # 编译和启动
 echo "🔨 Building server..."

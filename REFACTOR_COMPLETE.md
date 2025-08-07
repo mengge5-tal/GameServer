@@ -76,10 +76,10 @@ go build -o gameserver ./cmd/server
 ### 3. 验证功能
 ```bash
 # 检查健康状态
-curl http://localhost:8080/health
+curl http://101.201.51.135:8080/health
 
 # 查看架构信息
-curl http://localhost:8080/info
+curl http://101.201.51.135:8080/info
 
 # WebSocket连接
 ws://localhost:8080/ws

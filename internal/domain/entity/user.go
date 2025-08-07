@@ -63,20 +63,23 @@ type Ranking struct {
 
 // Equipment represents an equipment entity
 type Equipment struct {
-	EquipID     int    `json:"equipid"`
-	Quality     int    `json:"quality"`
-	Damage      int    `json:"damage"`
-	Crit        int    `json:"crit"`
-	CritDamage  int    `json:"critdamage"`
-	DamageSpeed int    `json:"damagespeed"`
-	BloodSuck   int    `json:"bloodsuck"`
-	HP          int    `json:"hp"`
-	MoveSpeed   int    `json:"movespeed"`
-	EquipName   string `json:"equipname"`
-	UserID      int    `json:"userid"`
-	Defense     int    `json:"defense"`
-	GoodFortune int    `json:"goodfortune"`
-	Type        int    `json:"type"`
+	EquipID        int    `json:"equipid"`
+	Quality        int    `json:"quality"`
+	Damage         int    `json:"damage"`
+	Crit           int    `json:"crit"`
+	CritDamage     int    `json:"critdamage"`
+	DamageSpeed    int    `json:"damagespeed"`
+	BloodSuck      int    `json:"bloodsuck"`
+	HP             int    `json:"hp"`
+	MoveSpeed      int    `json:"movespeed"`
+	SuitID         int    `json:"suitid"`
+	SuitName       string `json:"suitname"`
+	EquipTypeID    int    `json:"equip_type_id"`
+	EquipTypeName  string `json:"equip_type_name"`
+	UserID         int    `json:"userid"`
+	Defense        int    `json:"defense"`
+	GoodFortune    int    `json:"goodfortune"`
+	Type           int    `json:"type"`
 }
 
 // SourceStone represents a source stone entity

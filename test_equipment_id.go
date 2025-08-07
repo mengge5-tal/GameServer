@@ -5,6 +5,7 @@ import (
 	"log"
 	"os"
 
+	"GameServer/internal/domain/entity"
 	"GameServer/internal/infrastructure/config"
 	"GameServer/internal/infrastructure/database"
 	"GameServer/internal/infrastructure/repository"
@@ -12,8 +13,8 @@ import (
 
 func main() {
 	// Set test environment variables
-	os.Setenv("DB_HOST", "localhost")
-	os.Setenv("DB_PORT", "3306") 
+	os.Setenv("DB_HOST", "101.201.51.135")
+	os.Setenv("DB_PORT", "3306")
 	os.Setenv("DB_NAME", "gameserver")
 	os.Setenv("DB_USER", "root")
 	os.Setenv("DB_PASSWORD", "")
@@ -34,41 +35,48 @@ func main() {
 	// Create equipment repository
 	equipRepo := repository.NewMySQLEquipmentRepository(dbConnection.GetDB())
 
-	// Test equipment ID generation logic
-	fmt.Println("Testing Equipment ID Generation Logic")
-	fmt.Println("====================================")
+	// Test auto-increment equipment ID
+	fmt.Println("Testing Auto-Increment Equipment ID")
+	fmt.Println("===================================")
 
-	testCases := []struct {
-		equipType int
-		quality   int
-		expected  string
-	}{
-		{4, 1, "41000001"}, // First type=4, quality=1 equipment
-		{4, 1, "41000002"}, // Second type=4, quality=1 equipment  
-		{2, 3, "23000001"}, // First type=2, quality=3 equipment
-		{4, 2, "42000001"}, // First type=4, quality=2 equipment
+	// Create test equipment
+	testEquipment := &entity.Equipment{
+		Quality:       1,
+		Damage:        100,
+		Crit:          10,
+		CritDamage:    150,
+		DamageSpeed:   120,
+		BloodSuck:     5,
+		HP:            200,
+		MoveSpeed:     100,
+		SuitID:        1,
+		SuitName:      "Test Suit",
+		EquipTypeID:   1,
+		EquipTypeName: "Weapon",
+		UserID:        1,
+		Defense:       50,
+		GoodFortune:   10,
+		Type:          1,
 	}
 
-	for i, tc := range testCases {
-		fmt.Printf("Test case %d: type=%d, quality=%d\n", i+1, tc.equipType, tc.quality)
-		
-		// Get current max sequence
-		maxSeq, err := equipRepo.GetMaxSequenceByTypeAndQuality(tc.equipType, tc.quality)
-		if err != nil {
-			log.Printf("Error getting max sequence: %v", err)
-			continue
-		}
-		
-		// Calculate expected equipment ID
-		newSequence := maxSeq + 1
-		expectedID := tc.equipType*10000000 + tc.quality*1000000 + newSequence
-		
-		fmt.Printf("  Current max sequence: %d\n", maxSeq)
-		fmt.Printf("  New sequence: %d\n", newSequence)
-		fmt.Printf("  Generated Equipment ID: %d\n", expectedID)
-		fmt.Printf("  Expected format: %s\n", tc.expected)
-		fmt.Println()
+	// Test creating equipment
+	fmt.Println("Creating test equipment...")
+	err = equipRepo.Create(testEquipment)
+	if err != nil {
+		log.Printf("Error creating equipment: %v", err)
+	} else {
+		fmt.Printf("Equipment created successfully with auto-generated ID: %d\n", testEquipment.EquipID)
 	}
 
-	fmt.Println("Equipment ID Generation Test Completed!")
+	// Test retrieving equipment
+	fmt.Println("Retrieving created equipment...")
+	retrieved, err := equipRepo.GetByEquipID(testEquipment.EquipID)
+	if err != nil {
+		log.Printf("Error retrieving equipment: %v", err)
+	} else if retrieved != nil {
+		fmt.Printf("Retrieved equipment: ID=%d, SuitName=%s, EquipTypeName=%s\n",
+			retrieved.EquipID, retrieved.SuitName, retrieved.EquipTypeName)
+	}
+
+	fmt.Println("Auto-Increment Equipment ID Test Completed!")
 }

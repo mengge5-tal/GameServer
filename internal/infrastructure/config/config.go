@@ -59,7 +59,7 @@ type LoggingConfig struct {
 
 // CacheConfig holds cache configuration
 type CacheConfig struct {
-	DefaultTTL time.Duration `json:"default_ttl"`
+	DefaultTTL      time.Duration `json:"default_ttl"`
 	CleanupInterval time.Duration `json:"cleanup_interval"`
 }
 
@@ -84,11 +84,11 @@ func Load() (*Config, error) {
 			ConnMaxIdleTime: getEnvDuration("DB_CONN_MAX_IDLE_TIME", "60s"),
 		},
 		Server: ServerConfig{
-			Host: getEnv("SERVER_HOST", "localhost"),
+			Host: getEnv("SERVER_HOST", "0.0.0.0"),
 			Port: getEnvInt("SERVER_PORT", 8080),
 		},
 		WebSocket: WebSocketConfig{
-			AllowedOrigins:   getEnvStringArray("WS_ALLOWED_ORIGINS", []string{"http://localhost:3000", "http://localhost:8080"}),
+			AllowedOrigins:   getEnvStringArray("WS_ALLOWED_ORIGINS", []string{"*"}),
 			ReadBufferSize:   getEnvInt("WS_READ_BUFFER_SIZE", 1024),
 			WriteBufferSize:  getEnvInt("WS_WRITE_BUFFER_SIZE", 1024),
 			HandshakeTimeout: getEnvDuration("WS_HANDSHAKE_TIMEOUT", "10s"),

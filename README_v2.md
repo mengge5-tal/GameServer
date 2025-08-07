@@ -152,7 +152,7 @@ go build -o gameserver-v2 cmd/server/main_new.go
 ./gameserver-v2
 ```
 
-服务器将在 `localhost:8080` 启动
+服务器将在 `101.201.51.135:8080` 启动
 
 ## 🌐 API端点
 
@@ -305,7 +305,7 @@ go test -cover ./...
 
 ### 健康检查
 ```bash
-curl http://localhost:8080/health
+curl http://101.201.51.135:8080/health
 ```
 
 ### 系统指标

@@ -20,58 +20,67 @@ type UpdatePlayerRequest struct {
 
 // EquipmentResponse represents equipment response
 type EquipmentResponse struct {
-	EquipID     int    `json:"equipid"`
-	Quality     int    `json:"quality"`
-	Damage      int    `json:"damage"`
-	Crit        int    `json:"crit"`
-	CritDamage  int    `json:"critdamage"`
-	DamageSpeed int    `json:"damagespeed"`
-	BloodSuck   int    `json:"bloodsuck"`
-	HP          int    `json:"hp"`
-	MoveSpeed   int    `json:"movespeed"`
-	EquipName   string `json:"equipname"`
-	UserID      int    `json:"userid"`
-	Defense     int    `json:"defense"`
-	GoodFortune int    `json:"goodfortune"`
-	Type        int    `json:"type"`
+	EquipID       int    `json:"equipid"`
+	Quality       int    `json:"quality"`
+	Damage        int    `json:"damage"`
+	Crit          int    `json:"crit"`
+	CritDamage    int    `json:"critdamage"`
+	DamageSpeed   int    `json:"damagespeed"`
+	BloodSuck     int    `json:"bloodsuck"`
+	HP            int    `json:"hp"`
+	MoveSpeed     int    `json:"movespeed"`
+	SuitID        int    `json:"suitid"`
+	SuitName      string `json:"suitname"`
+	EquipTypeID   int    `json:"equip_type_id"`
+	EquipTypeName string `json:"equip_type_name"`
+	UserID        int    `json:"userid"`
+	Defense       int    `json:"defense"`
+	GoodFortune   int    `json:"goodfortune"`
+	Type          int    `json:"type"`
 }
 
 // SaveEquipmentRequest represents save equipment request
 type SaveEquipmentRequest struct {
 	Equipment EquipmentData `json:"equipment"`
 	// Support both formats: nested and direct
-	EquipID     int    `json:"equipid"`
-	Quality     int    `json:"quality"`
-	Damage      int    `json:"damage"`
-	Crit        int    `json:"crit"`
-	CritDamage  int    `json:"critdamage"`
-	DamageSpeed int    `json:"damagespeed"`
-	BloodSuck   int    `json:"bloodsuck"`
-	HP          int    `json:"hp"`
-	MoveSpeed   int    `json:"movespeed"`
-	EquipName   string `json:"equipname"`
-	UserID      int    `json:"userid"`
-	Defense     int    `json:"defense"`
-	GoodFortune int    `json:"goodfortune"`
-	Type        int    `json:"type"`
+	EquipID       int    `json:"equipid"`
+	Quality       int    `json:"quality"`
+	Damage        int    `json:"damage"`
+	Crit          int    `json:"crit"`
+	CritDamage    int    `json:"critdamage"`
+	DamageSpeed   int    `json:"damagespeed"`
+	BloodSuck     int    `json:"bloodsuck"`
+	HP            int    `json:"hp"`
+	MoveSpeed     int    `json:"movespeed"`
+	SuitID        int    `json:"suitid"`
+	SuitName      string `json:"suitname"`
+	EquipTypeID   int    `json:"equip_type_id"`
+	EquipTypeName string `json:"equip_type_name"`
+	UserID        int    `json:"userid"`
+	Defense       int    `json:"defense"`
+	GoodFortune   int    `json:"goodfortune"`
+	Type          int    `json:"type"`
 }
 
 // EquipmentData represents the equipment data within save request
 type EquipmentData struct {
-	EquipID     int    `json:"equipid"`
-	Quality     int    `json:"quality"`
-	Damage      int    `json:"damage"`
-	Crit        int    `json:"crit"`
-	CritDamage  int    `json:"critdamage"`
-	DamageSpeed int    `json:"damagespeed"`
-	BloodSuck   int    `json:"bloodsuck"`
-	HP          int    `json:"hp"`
-	MoveSpeed   int    `json:"movespeed"`
-	EquipName   string `json:"equipname"`
-	UserID      int    `json:"userid"`
-	Defense     int    `json:"defense"`
-	GoodFortune int    `json:"goodfortune"`
-	Type        int    `json:"type"`
+	EquipID       int    `json:"equipid"`
+	Quality       int    `json:"quality"`
+	Damage        int    `json:"damage"`
+	Crit          int    `json:"crit"`
+	CritDamage    int    `json:"critdamage"`
+	DamageSpeed   int    `json:"damagespeed"`
+	BloodSuck     int    `json:"bloodsuck"`
+	HP            int    `json:"hp"`
+	MoveSpeed     int    `json:"movespeed"`
+	SuitID        int    `json:"suitid"`
+	SuitName      string `json:"suitname"`
+	EquipTypeID   int    `json:"equip_type_id"`
+	EquipTypeName string `json:"equip_type_name"`
+	UserID        int    `json:"userid"`
+	Defense       int    `json:"defense"`
+	GoodFortune   int    `json:"goodfortune"`
+	Type          int    `json:"type"`
 }
 
 // GetEffectiveEquipmentData returns the equipment data, prioritizing nested format
@@ -82,20 +91,23 @@ func (req *SaveEquipmentRequest) GetEffectiveEquipmentData() EquipmentData {
 	}
 	// Otherwise use direct fields
 	return EquipmentData{
-		EquipID:     req.EquipID,
-		Quality:     req.Quality,
-		Damage:      req.Damage,
-		Crit:        req.Crit,
-		CritDamage:  req.CritDamage,
-		DamageSpeed: req.DamageSpeed,
-		BloodSuck:   req.BloodSuck,
-		HP:          req.HP,
-		MoveSpeed:   req.MoveSpeed,
-		EquipName:   req.EquipName,
-		UserID:      req.UserID,
-		Defense:     req.Defense,
-		GoodFortune: req.GoodFortune,
-		Type:        req.Type,
+		EquipID:       req.EquipID,
+		Quality:       req.Quality,
+		Damage:        req.Damage,
+		Crit:          req.Crit,
+		CritDamage:    req.CritDamage,
+		DamageSpeed:   req.DamageSpeed,
+		BloodSuck:     req.BloodSuck,
+		HP:            req.HP,
+		MoveSpeed:     req.MoveSpeed,
+		SuitID:        req.SuitID,
+		SuitName:      req.SuitName,
+		EquipTypeID:   req.EquipTypeID,
+		EquipTypeName: req.EquipTypeName,
+		UserID:        req.UserID,
+		Defense:       req.Defense,
+		GoodFortune:   req.GoodFortune,
+		Type:          req.Type,
 	}
 }
 

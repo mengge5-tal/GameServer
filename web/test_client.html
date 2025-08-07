@@ -230,7 +230,7 @@
         }
 
         function connect() {
-            ws = new WebSocket('ws://localhost:8080/ws');
+            ws = new WebSocket('ws://101.201.51.135:8080/ws');
             
             ws.onopen = function() {
                 document.getElementById('status').textContent = '已连接';
