@@ -85,6 +85,7 @@ func (r *messageRouter) registerHandlers() {
 	r.register(valueobject.MessageTypeEquip, valueobject.ActionGetEquip, NewPlayerHandler(r.services.PlayerService))
 	r.register(valueobject.MessageTypeEquip, valueobject.ActionSaveEquip, NewPlayerHandler(r.services.PlayerService))
 	r.register(valueobject.MessageTypeEquip, valueobject.ActionDeleteEquip, NewPlayerHandler(r.services.PlayerService))
+	r.register(valueobject.MessageTypeEquip, valueobject.ActionDelEquip, NewPlayerHandler(r.services.PlayerService))
 
 	// Friend handlers
 	r.register(valueobject.MessageTypeFriend, valueobject.ActionGetFriends, NewFriendHandler(r.services.FriendService))

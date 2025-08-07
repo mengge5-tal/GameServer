@@ -31,9 +31,10 @@ const (
 	ActionPing MessageAction = "ping"
 
 	// Equipment actions
-	ActionGetEquip   MessageAction = "getEquip"
-	ActionSaveEquip  MessageAction = "saveEquip"
+	ActionGetEquip    MessageAction = "getEquip"
+	ActionSaveEquip   MessageAction = "saveEquip"
 	ActionDeleteEquip MessageAction = "deleteEquip"
+	ActionDelEquip    MessageAction = "delEquip"
 
 	// Player actions
 	ActionGetPlayerInfo MessageAction = "getPlayerInfo"

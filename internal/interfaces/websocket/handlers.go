@@ -123,6 +123,8 @@ func (h *PlayerHandler) Handle(client *Client, message *valueobject.Message) *va
 		return h.handleSaveEquipment(client, message)
 	case valueobject.ActionDeleteEquip:
 		return h.handleDeleteEquipment(client, message)
+	case valueobject.ActionDelEquip:
+		return h.handleDeleteEquipment(client, message)
 	default:
 		return valueobject.NewErrorResponse(message.RequestID, valueobject.CodeInvalidRequest, "Unknown player action")
 	}

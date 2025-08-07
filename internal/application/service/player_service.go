@@ -125,32 +125,35 @@ func (s *PlayerService) GetUserEquipment(userID int) ([]*dto.EquipmentResponse, 
 
 // SaveEquipment saves or updates equipment
 func (s *PlayerService) SaveEquipment(req *dto.SaveEquipmentRequest) (*dto.EquipmentResponse, error) {
+	// Get effective equipment data (supports both nested and direct formats)
+	equipData := req.GetEffectiveEquipmentData()
+	
 	// Validate required fields
-	if req.Type <= 0 || req.Quality <= 0 {
+	if equipData.Type <= 0 || equipData.Quality <= 0 {
 		return nil, entity.NewDomainError("type and quality must be positive integers")
 	}
 	
 	// Convert DTO to entity
 	equipment := &entity.Equipment{
-		EquipID:     req.EquipID,
-		Quality:     req.Quality,
-		Damage:      req.Damage,
-		Crit:        req.Crit,
-		CritDamage:  req.CritDamage,
-		DamageSpeed: req.DamageSpeed,
-		BloodSuck:   req.BloodSuck,
-		HP:          req.HP,
-		MoveSpeed:   req.MoveSpeed,
-		EquipName:   req.EquipName,
-		UserID:      req.UserID,
-		Defense:     req.Defense,
-		GoodFortune: req.GoodFortune,
-		Type:        req.Type,
+		EquipID:     equipData.EquipID,
+		Quality:     equipData.Quality,
+		Damage:      equipData.Damage,
+		Crit:        equipData.Crit,
+		CritDamage:  equipData.CritDamage,
+		DamageSpeed: equipData.DamageSpeed,
+		BloodSuck:   equipData.BloodSuck,
+		HP:          equipData.HP,
+		MoveSpeed:   equipData.MoveSpeed,
+		EquipName:   equipData.EquipName,
+		UserID:      req.UserID, // Always use req.UserID which is set by handler
+		Defense:     equipData.Defense,
+		GoodFortune: equipData.GoodFortune,
+		Type:        equipData.Type,
 	}
 
-	if req.EquipID == 0 {
+	if equipData.EquipID == 0 {
 		// Generate new equipment ID
-		newEquipID, err := s.generateEquipmentID(req.Type, req.Quality)
+		newEquipID, err := s.generateEquipmentID(equipData.Type, equipData.Quality)
 		if err != nil {
 			return nil, fmt.Errorf("failed to generate equipment ID: %w", err)
 		}
@@ -162,7 +165,7 @@ func (s *PlayerService) SaveEquipment(req *dto.SaveEquipmentRequest) (*dto.Equip
 		}
 	} else {
 		// Check if equipment exists for update
-		existing, err := s.equipmentRepo.GetByEquipID(req.EquipID)
+		existing, err := s.equipmentRepo.GetByEquipID(equipData.EquipID)
 		if err != nil {
 			return nil, fmt.Errorf("failed to check existing equipment: %w", err)
 		}
