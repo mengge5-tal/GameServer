@@ -39,16 +39,9 @@ func (s *AuthService) Login(req *dto.LoginRequest) (*dto.LoginResponse, error) {
 		return nil, err
 	}
 
-	// Check cache first
+	// Always check database for login to get latest online status
+	// Cache is only used for subsequent operations, not for login verification
 	cacheKey := "user:" + req.Username
-	if cachedUser, err := s.cacheService.GetUser(cacheKey); err == nil && cachedUser != nil {
-		if s.verifyPassword(req.Password, cachedUser.Password) {
-			return &dto.LoginResponse{
-				UserID:   cachedUser.ID,
-				Username: cachedUser.Username,
-			}, nil
-		}
-	}
 
 	// Get user from database
 	user, err := s.userRepo.VerifyCredentials(req.Username, req.Password)
@@ -62,6 +55,11 @@ func (s *AuthService) Login(req *dto.LoginRequest) (*dto.LoginResponse, error) {
 	// Verify password
 	if !s.verifyPassword(req.Password, user.Password) {
 		return nil, entity.NewDomainError("invalid username or password")
+	}
+
+	// Check if user is already online (prevent duplicate login)
+	if user.OnlineStatus == 1 {
+		return nil, entity.NewDomainError("user is already logged in")
 	}
 
 	// Update online status to 1 (online)

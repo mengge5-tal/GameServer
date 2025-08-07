@@ -39,7 +39,14 @@ func (h *AuthHandler) handleLogin(client *Client, message *valueobject.Message) 
 
 	response, err := h.authService.Login(&req)
 	if err != nil {
-		return valueobject.NewErrorResponse(message.RequestID, valueobject.CodeUnauthorized, err.Error())
+		// Check for specific error types to return appropriate error codes
+		errorMsg := err.Error()
+		if errorMsg == "user is already logged in" {
+			return valueobject.NewErrorResponse(message.RequestID, valueobject.CodeConflict, err.Error())
+		} else if errorMsg == "invalid username or password" {
+			return valueobject.NewErrorResponse(message.RequestID, valueobject.CodeUnauthorized, err.Error())
+		}
+		return valueobject.NewErrorResponse(message.RequestID, valueobject.CodeInternalError, err.Error())
 	}
 
 	// Set client authentication
