@@ -11,7 +11,7 @@ type PlayerInfoResponse struct {
 
 // UpdatePlayerRequest represents update player request
 type UpdatePlayerRequest struct {
-	UserID      int `json:"userid"`
+	UserID      int  `json:"userid"`
 	Level       *int `json:"level,omitempty"`
 	Experience  *int `json:"experience,omitempty"`
 	GameLevel   *int `json:"gamelevel,omitempty"`
@@ -31,7 +31,7 @@ type EquipmentResponse struct {
 	MoveSpeed   int    `json:"movespeed"`
 	EquipName   string `json:"equipname"`
 	UserID      int    `json:"userid"`
-	Defense     int    `json:"denfense"`
+	Defense     int    `json:"defense"`
 	GoodFortune int    `json:"goodfortune"`
 	Type        int    `json:"type"`
 }
@@ -49,7 +49,7 @@ type SaveEquipmentRequest struct {
 	MoveSpeed   int    `json:"movespeed"`
 	EquipName   string `json:"equipname"`
 	UserID      int    `json:"userid"`
-	Defense     int    `json:"denfense"`
+	Defense     int    `json:"defense"`
 	GoodFortune int    `json:"goodfortune"`
 	Type        int    `json:"type"`
 }

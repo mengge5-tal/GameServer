@@ -55,7 +55,7 @@ type FriendRequest struct {
 type Ranking struct {
 	ID           int       `json:"id"`
 	UserID       int       `json:"userid"`
-	RankType     string    `json:"rank_type"`     // level, experience, equipment_power
+	RankType     string    `json:"rank_type"` // level, experience, equipment_power
 	RankValue    int       `json:"rank_value"`
 	RankPosition int       `json:"rank_position"`
 	UpdatedAt    time.Time `json:"updated_at"`
@@ -74,7 +74,7 @@ type Equipment struct {
 	MoveSpeed   int    `json:"movespeed"`
 	EquipName   string `json:"equipname"`
 	UserID      int    `json:"userid"`
-	Defense     int    `json:"denfense"`
+	Defense     int    `json:"defense"`
 	GoodFortune int    `json:"goodfortune"`
 	Type        int    `json:"type"`
 }

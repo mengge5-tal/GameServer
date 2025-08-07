@@ -15,7 +15,7 @@ type PlayerServiceInterface interface {
 	GetPlayerInfo(userID int) (*dto.PlayerInfoResponse, error)
 	UpdatePlayer(req *dto.UpdatePlayerRequest) error
 	GetUserEquipment(userID int) ([]*dto.EquipmentResponse, error)
-	SaveEquipment(req *dto.SaveEquipmentRequest) error
+	SaveEquipment(req *dto.SaveEquipmentRequest) (*dto.EquipmentResponse, error)
 	DeleteEquipment(equipID, userID int) error
 	GetUserSourceStones(userID int) ([]*dto.SourceStoneResponse, error)
 }

@@ -227,7 +227,7 @@ hp,int,YES,"",,""
 movespeed,int,YES,"",,""
 equipname,varchar(45),YES,"",,""
 userid,int,NO,"",,""
-denfense,int,YES,"",,""
+defense,int,YES,"",,""
 goodfortune,int,YES,"",,""
 type,int,YES,"",1,""
 

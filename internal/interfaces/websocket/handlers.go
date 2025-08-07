@@ -165,11 +165,20 @@ func (h *PlayerHandler) handleSaveEquipment(client *Client, message *valueobject
 	}
 
 	req.UserID = client.GetUserID() // Ensure user can only save their own equipment
-	if err := h.playerService.SaveEquipment(&req); err != nil {
+	equipment, err := h.playerService.SaveEquipment(&req)
+	if err != nil {
+		// Check for specific error types
+		errorMsg := err.Error()
+		if errorMsg == "type and quality must be positive integers" || 
+		   errorMsg == "equipment not found for update" ||
+		   errorMsg == "unauthorized to update this equipment" ||
+		   errorMsg == "equipment sequence limit reached for this type and quality" {
+			return valueobject.NewErrorResponse(message.RequestID, valueobject.CodeValidationError, err.Error())
+		}
 		return valueobject.NewErrorResponse(message.RequestID, valueobject.CodeInternalError, err.Error())
 	}
 
-	return valueobject.NewSuccessResponse(message.RequestID, map[string]string{"message": "Equipment saved successfully"})
+	return valueobject.NewSuccessResponse(message.RequestID, equipment)
 }
 
 func (h *PlayerHandler) handleDeleteEquipment(client *Client, message *valueobject.Message) *valueobject.Response {

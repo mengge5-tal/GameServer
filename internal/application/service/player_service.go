@@ -124,7 +124,12 @@ func (s *PlayerService) GetUserEquipment(userID int) ([]*dto.EquipmentResponse, 
 }
 
 // SaveEquipment saves or updates equipment
-func (s *PlayerService) SaveEquipment(req *dto.SaveEquipmentRequest) error {
+func (s *PlayerService) SaveEquipment(req *dto.SaveEquipmentRequest) (*dto.EquipmentResponse, error) {
+	// Validate required fields
+	if req.Type <= 0 || req.Quality <= 0 {
+		return nil, entity.NewDomainError("type and quality must be positive integers")
+	}
+	
 	// Convert DTO to entity
 	equipment := &entity.Equipment{
 		EquipID:     req.EquipID,
@@ -143,21 +148,37 @@ func (s *PlayerService) SaveEquipment(req *dto.SaveEquipmentRequest) error {
 		Type:        req.Type,
 	}
 
-	// Check if equipment exists
-	existing, err := s.equipmentRepo.GetByEquipID(req.EquipID)
-	if err != nil {
-		return err
-	}
-
-	if existing != nil {
-		// Update existing equipment
-		if err := s.equipmentRepo.Update(equipment); err != nil {
-			return err
+	if req.EquipID == 0 {
+		// Generate new equipment ID
+		newEquipID, err := s.generateEquipmentID(req.Type, req.Quality)
+		if err != nil {
+			return nil, fmt.Errorf("failed to generate equipment ID: %w", err)
 		}
-	} else {
+		equipment.EquipID = newEquipID
+		
 		// Create new equipment
 		if err := s.equipmentRepo.Create(equipment); err != nil {
-			return err
+			return nil, fmt.Errorf("failed to create equipment: %w", err)
+		}
+	} else {
+		// Check if equipment exists for update
+		existing, err := s.equipmentRepo.GetByEquipID(req.EquipID)
+		if err != nil {
+			return nil, fmt.Errorf("failed to check existing equipment: %w", err)
+		}
+		
+		if existing == nil {
+			return nil, entity.NewDomainError("equipment not found for update")
+		}
+		
+		// Verify ownership
+		if existing.UserID != req.UserID {
+			return nil, entity.NewDomainError("unauthorized to update this equipment")
+		}
+		
+		// Update existing equipment
+		if err := s.equipmentRepo.Update(equipment); err != nil {
+			return nil, fmt.Errorf("failed to update equipment: %w", err)
 		}
 	}
 
@@ -165,7 +186,46 @@ func (s *PlayerService) SaveEquipment(req *dto.SaveEquipmentRequest) error {
 	cacheKey := fmt.Sprintf("equipment:%d", req.UserID)
 	s.cacheService.Delete(cacheKey)
 
-	return nil
+	// Return the equipment response with the final equipID
+	return &dto.EquipmentResponse{
+		EquipID:     equipment.EquipID,
+		Quality:     equipment.Quality,
+		Damage:      equipment.Damage,
+		Crit:        equipment.Crit,
+		CritDamage:  equipment.CritDamage,
+		DamageSpeed: equipment.DamageSpeed,
+		BloodSuck:   equipment.BloodSuck,
+		HP:          equipment.HP,
+		MoveSpeed:   equipment.MoveSpeed,
+		EquipName:   equipment.EquipName,
+		UserID:      equipment.UserID,
+		Defense:     equipment.Defense,
+		GoodFortune: equipment.GoodFortune,
+		Type:        equipment.Type,
+	}, nil
+}
+
+// generateEquipmentID generates a new equipment ID based on type and quality
+func (s *PlayerService) generateEquipmentID(equipType, quality int) (int, error) {
+	// Get the maximum sequence number for this type and quality
+	maxSequence, err := s.equipmentRepo.GetMaxSequenceByTypeAndQuality(equipType, quality)
+	if err != nil {
+		return 0, err
+	}
+	
+	// Generate new sequence number
+	newSequence := maxSequence + 1
+	
+	// Ensure sequence doesn't exceed 6 digits
+	if newSequence > 999999 {
+		return 0, entity.NewDomainError("equipment sequence limit reached for this type and quality")
+	}
+	
+	// Generate equipment ID: [type][quality][6-digit sequence]
+	// Example: type=4, quality=1, sequence=1 -> 41000001
+	equipID := equipType*10000000 + quality*1000000 + newSequence
+	
+	return equipID, nil
 }
 
 // DeleteEquipment deletes equipment

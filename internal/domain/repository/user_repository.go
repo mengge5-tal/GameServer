@@ -58,6 +58,7 @@ type EquipmentRepository interface {
 	Update(equipment *entity.Equipment) error
 	Delete(equipID int) error
 	GetUserEquipmentCount(userID int) (int, error)
+	GetMaxSequenceByTypeAndQuality(equipType, quality int) (int, error)
 }
 
 // SourceStoneRepository defines the interface for source stone data access
