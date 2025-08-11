@@ -223,15 +223,7 @@ func CreateMissingTables(db *sql.DB) error {
 		}
 	}
 
-	// 检查并移除已弃用的equipname字段
-	var equipnameExists bool
-	err = db.QueryRow("SELECT COUNT(*) > 0 FROM information_schema.columns WHERE table_schema = DATABASE() AND table_name = 'equip' AND column_name = 'equipname'").Scan(&equipnameExists)
-	if err != nil {
-		log.Printf("Warning: failed to check equipname column existence: %v", err)
-	} else if equipnameExists {
-		log.Println("Warning: equipname column still exists in equip table, consider removing it manually")
-		// 不自动删除列，让用户手动处理，以防数据丢失
-	}
+	// equipname字段现在是有效字段，不再需要移除
 
 	// 检查并修改equipid字段为自增
 	var isAutoIncrement bool

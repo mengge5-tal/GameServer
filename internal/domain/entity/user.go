@@ -72,6 +72,7 @@ type Equipment struct {
 	BloodSuck      int    `json:"bloodsuck"`
 	HP             int    `json:"hp"`
 	MoveSpeed      int    `json:"movespeed"`
+	EquipName      string `json:"equipname"`
 	SuitID         int    `json:"suitid"`
 	SuitName       string `json:"suitname"`
 	EquipTypeID    int    `json:"equip_type_id"`

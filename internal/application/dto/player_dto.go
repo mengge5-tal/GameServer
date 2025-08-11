@@ -29,6 +29,7 @@ type EquipmentResponse struct {
 	BloodSuck     int    `json:"bloodsuck"`
 	HP            int    `json:"hp"`
 	MoveSpeed     int    `json:"movespeed"`
+	EquipName     string `json:"equipname"`
 	SuitID        int    `json:"suitid"`
 	SuitName      string `json:"suitname"`
 	EquipTypeID   int    `json:"equip_type_id"`
@@ -52,6 +53,7 @@ type SaveEquipmentRequest struct {
 	BloodSuck     int    `json:"bloodsuck"`
 	HP            int    `json:"hp"`
 	MoveSpeed     int    `json:"movespeed"`
+	EquipName     string `json:"equipname"`
 	SuitID        int    `json:"suitid"`
 	SuitName      string `json:"suitname"`
 	EquipTypeID   int    `json:"equip_type_id"`
@@ -73,6 +75,7 @@ type EquipmentData struct {
 	BloodSuck     int    `json:"bloodsuck"`
 	HP            int    `json:"hp"`
 	MoveSpeed     int    `json:"movespeed"`
+	EquipName     string `json:"equipname"`
 	SuitID        int    `json:"suitid"`
 	SuitName      string `json:"suitname"`
 	EquipTypeID   int    `json:"equip_type_id"`
@@ -100,6 +103,7 @@ func (req *SaveEquipmentRequest) GetEffectiveEquipmentData() EquipmentData {
 		BloodSuck:     req.BloodSuck,
 		HP:            req.HP,
 		MoveSpeed:     req.MoveSpeed,
+		EquipName:     req.EquipName,
 		SuitID:        req.SuitID,
 		SuitName:      req.SuitName,
 		EquipTypeID:   req.EquipTypeID,

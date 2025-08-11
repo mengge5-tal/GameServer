@@ -19,7 +19,7 @@ func NewMySQLEquipmentRepository(db *sql.DB) repository.EquipmentRepository {
 // GetByUserID retrieves all equipment for a user
 func (r *mysqlEquipmentRepository) GetByUserID(userID int) ([]*entity.Equipment, error) {
 	query := `SELECT equipid, quality, damage, crit, critdamage, damagespeed, 
-			  bloodsuck, hp, movespeed, suitid, suitname, equip_type_id, equip_type_name,
+			  bloodsuck, hp, movespeed, equipname, suitid, suitname, equip_type_id, equip_type_name,
 			  userid, defense, goodfortune, type 
 			  FROM equip WHERE userid = ?`
 
@@ -35,7 +35,7 @@ func (r *mysqlEquipmentRepository) GetByUserID(userID int) ([]*entity.Equipment,
 		err := rows.Scan(
 			&equip.EquipID, &equip.Quality, &equip.Damage, &equip.Crit,
 			&equip.CritDamage, &equip.DamageSpeed, &equip.BloodSuck, &equip.HP,
-			&equip.MoveSpeed, &equip.SuitID, &equip.SuitName, &equip.EquipTypeID,
+			&equip.MoveSpeed, &equip.EquipName, &equip.SuitID, &equip.SuitName, &equip.EquipTypeID,
 			&equip.EquipTypeName, &equip.UserID, &equip.Defense, &equip.GoodFortune, &equip.Type,
 		)
 		if err != nil {
@@ -51,14 +51,14 @@ func (r *mysqlEquipmentRepository) GetByUserID(userID int) ([]*entity.Equipment,
 func (r *mysqlEquipmentRepository) GetByEquipID(equipID int) (*entity.Equipment, error) {
 	equip := &entity.Equipment{}
 	query := `SELECT equipid, quality, damage, crit, critdamage, damagespeed, 
-			  bloodsuck, hp, movespeed, suitid, suitname, equip_type_id, equip_type_name,
+			  bloodsuck, hp, movespeed, equipname, suitid, suitname, equip_type_id, equip_type_name,
 			  userid, defense, goodfortune, type 
 			  FROM equip WHERE equipid = ?`
 
 	err := r.db.QueryRow(query, equipID).Scan(
 		&equip.EquipID, &equip.Quality, &equip.Damage, &equip.Crit,
 		&equip.CritDamage, &equip.DamageSpeed, &equip.BloodSuck, &equip.HP,
-		&equip.MoveSpeed, &equip.SuitID, &equip.SuitName, &equip.EquipTypeID,
+		&equip.MoveSpeed, &equip.EquipName, &equip.SuitID, &equip.SuitName, &equip.EquipTypeID,
 		&equip.EquipTypeName, &equip.UserID, &equip.Defense, &equip.GoodFortune, &equip.Type,
 	)
 	if err != nil {
@@ -73,14 +73,14 @@ func (r *mysqlEquipmentRepository) GetByEquipID(equipID int) (*entity.Equipment,
 // Create creates new equipment
 func (r *mysqlEquipmentRepository) Create(equipment *entity.Equipment) error {
 	query := `INSERT INTO equip (quality, damage, crit, critdamage, damagespeed, 
-			  bloodsuck, hp, movespeed, suitid, suitname, equip_type_id, equip_type_name,
+			  bloodsuck, hp, movespeed, equipname, suitid, suitname, equip_type_id, equip_type_name,
 			  userid, defense, goodfortune, type) 
-			  VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+			  VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
 
 	result, err := r.db.Exec(query,
 		equipment.Quality, equipment.Damage, equipment.Crit,
 		equipment.CritDamage, equipment.DamageSpeed, equipment.BloodSuck, equipment.HP,
-		equipment.MoveSpeed, equipment.SuitID, equipment.SuitName, equipment.EquipTypeID,
+		equipment.MoveSpeed, equipment.EquipName, equipment.SuitID, equipment.SuitName, equipment.EquipTypeID,
 		equipment.EquipTypeName, equipment.UserID, equipment.Defense, equipment.GoodFortune, equipment.Type,
 	)
 	if err != nil {
@@ -100,14 +100,14 @@ func (r *mysqlEquipmentRepository) Create(equipment *entity.Equipment) error {
 // Update updates existing equipment
 func (r *mysqlEquipmentRepository) Update(equipment *entity.Equipment) error {
 	query := `UPDATE equip SET quality = ?, damage = ?, crit = ?, critdamage = ?, 
-			  damagespeed = ?, bloodsuck = ?, hp = ?, movespeed = ?, suitid = ?, suitname = ?,
+			  damagespeed = ?, bloodsuck = ?, hp = ?, movespeed = ?, equipname = ?, suitid = ?, suitname = ?,
 			  equip_type_id = ?, equip_type_name = ?, userid = ?, defense = ?, goodfortune = ?, type = ? 
 			  WHERE equipid = ?`
 
 	_, err := r.db.Exec(query,
 		equipment.Quality, equipment.Damage, equipment.Crit, equipment.CritDamage,
 		equipment.DamageSpeed, equipment.BloodSuck, equipment.HP, equipment.MoveSpeed,
-		equipment.SuitID, equipment.SuitName, equipment.EquipTypeID, equipment.EquipTypeName,
+		equipment.EquipName, equipment.SuitID, equipment.SuitName, equipment.EquipTypeID, equipment.EquipTypeName,
 		equipment.UserID, equipment.Defense, equipment.GoodFortune, equipment.Type, equipment.EquipID,
 	)
 	return err
