@@ -1,6 +1,9 @@
 package websocket
 
-import "GameServer/internal/application/dto"
+import (
+	"GameServer/internal/application/dto"
+	"GameServer/internal/domain/entity"
+)
 
 // AuthServiceInterface defines the interface for auth service used by websocket handlers
 type AuthServiceInterface interface {
@@ -46,4 +49,28 @@ type UserEquipServiceInterface interface {
 	UnequipItem(userID int, slot string) error
 	GetEquippedItemsBySlot(userID int, slot string) (interface{}, error)
 	GetEquipmentStats(userID int) (map[string]int, error)
+}
+
+// ExperienceServiceInterface defines the interface for experience service used by websocket handlers
+type ExperienceServiceInterface interface {
+	GetByLevel(level int) (*entity.Experience, error)
+	GetAllLevels() ([]*entity.Experience, error)
+}
+
+// WeaponServiceInterface defines the interface for weapon service used by websocket handlers
+type WeaponServiceInterface interface {
+	GetWeaponByID(weaponID int) (*dto.WeaponResponse, error)
+	GetAllWeapons() ([]*dto.WeaponResponse, error)
+	CreateWeapon(req *dto.CreateWeaponRequest) (*dto.WeaponResponse, error)
+	UpdateWeapon(req *dto.UpdateWeaponRequest) (*dto.WeaponResponse, error)
+	DeleteWeapon(weaponID int) error
+}
+
+// UserWeaponServiceInterface defines the interface for user weapon service used by websocket handlers
+type UserWeaponServiceInterface interface {
+	GetUserWeapons(userID int, withDetails bool) (interface{}, error)
+	AddUserWeapon(req *dto.AddUserWeaponRequest) (*dto.UserWeaponResponse, error)
+	RemoveUserWeapon(req *dto.RemoveUserWeaponRequest) error
+	RemoveUserWeaponByID(id int) error
+	CheckUserWeapon(req *dto.CheckUserWeaponRequest) (*dto.CheckUserWeaponResponse, error)
 }

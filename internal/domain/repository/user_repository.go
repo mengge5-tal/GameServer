@@ -75,3 +75,23 @@ type ExperienceRepository interface {
 	GetByLevel(level int) (*entity.Experience, error)
 	GetAllLevels() ([]*entity.Experience, error)
 }
+
+// WeaponRepository defines the interface for weapon data access
+type WeaponRepository interface {
+	GetByID(weaponID int) (*entity.Weapon, error)
+	GetAll() ([]*entity.Weapon, error)
+	Create(weapon *entity.Weapon) error
+	Update(weapon *entity.Weapon) error
+	Delete(weaponID int) error
+}
+
+// UserWeaponRepository defines the interface for user weapon ownership data access
+type UserWeaponRepository interface {
+	GetByID(id int) (*entity.UserWeapon, error)
+	GetByUserID(userID int) ([]*entity.UserWeapon, error)
+	GetByUserAndWeapon(userID, weaponID int) (*entity.UserWeapon, error)
+	Create(userWeapon *entity.UserWeapon) error
+	Delete(id int) error
+	DeleteByUserAndWeapon(userID, weaponID int) error
+	UserOwnsWeapon(userID, weaponID int) (bool, error)
+}

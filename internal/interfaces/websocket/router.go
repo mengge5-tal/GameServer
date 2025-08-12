@@ -48,19 +48,19 @@ func (r *messageRouter) Handle(client *Client, message *valueobject.Message) *va
 	typeHandlers, exists := r.handlers[message.Type]
 	if !exists {
 		log.Printf("Unknown message type: %s", message.Type)
-		return valueobject.NewErrorResponse(message.RequestID, valueobject.CodeInvalidRequest, "Unknown message type")
+		return valueobject.NewErrorResponseWithUniqueID(message.Type, message.Action, valueobject.CodeInvalidRequest, "Unknown message type")
 	}
 
 	// Find handler for action
 	handler, exists := typeHandlers[message.Action]
 	if !exists {
 		log.Printf("Unknown action %s for type %s", message.Action, message.Type)
-		return valueobject.NewErrorResponse(message.RequestID, valueobject.CodeInvalidRequest, "Unknown action")
+		return valueobject.NewErrorResponseWithUniqueID(message.Type, message.Action, valueobject.CodeInvalidRequest, "Unknown action")
 	}
 
 	// Check authentication for protected actions
 	if r.requiresAuth(message.Type, message.Action) && !client.IsAuthenticated() {
-		return valueobject.NewErrorResponse(message.RequestID, valueobject.CodeUnauthorized, "Authentication required")
+		return valueobject.NewErrorResponseWithUniqueID(message.Type, message.Action, valueobject.CodeUnauthorized, "Authentication required")
 	}
 
 	// Handle the message
@@ -105,6 +105,23 @@ func (r *messageRouter) registerHandlers() {
 	r.register(valueobject.MessageTypeUserEquip, valueobject.ActionUnequipItem, NewUserEquipHandler(r.services.UserEquipService))
 	r.register(valueobject.MessageTypeUserEquip, valueobject.ActionGetEquipmentStats, NewUserEquipHandler(r.services.UserEquipService))
 	r.register(valueobject.MessageTypeUserEquip, valueobject.ActionGetEquippedBySlot, NewUserEquipHandler(r.services.UserEquipService))
+
+	// Experience handlers
+	r.register(valueobject.MessageTypeExperience, valueobject.ActionGetByLevel, NewExperienceHandler(r.services.ExperienceService))
+	r.register(valueobject.MessageTypeExperience, valueobject.ActionGetAllLevels, NewExperienceHandler(r.services.ExperienceService))
+
+	// Weapon handlers
+	r.register(valueobject.MessageTypeWeapon, valueobject.ActionGetWeapon, NewWeaponHandler(r.services.WeaponService))
+	r.register(valueobject.MessageTypeWeapon, valueobject.ActionGetAllWeapons, NewWeaponHandler(r.services.WeaponService))
+	r.register(valueobject.MessageTypeWeapon, valueobject.ActionCreateWeapon, NewWeaponHandler(r.services.WeaponService))
+	r.register(valueobject.MessageTypeWeapon, valueobject.ActionUpdateWeapon, NewWeaponHandler(r.services.WeaponService))
+	r.register(valueobject.MessageTypeWeapon, valueobject.ActionDeleteWeapon, NewWeaponHandler(r.services.WeaponService))
+
+	// User Weapon handlers
+	r.register(valueobject.MessageTypeUserWeapon, valueobject.ActionGetUserWeapons, NewUserWeaponHandler(r.services.UserWeaponService))
+	r.register(valueobject.MessageTypeUserWeapon, valueobject.ActionAddUserWeapon, NewUserWeaponHandler(r.services.UserWeaponService))
+	r.register(valueobject.MessageTypeUserWeapon, valueobject.ActionRemoveUserWeapon, NewUserWeaponHandler(r.services.UserWeaponService))
+	r.register(valueobject.MessageTypeUserWeapon, valueobject.ActionCheckUserWeapon, NewUserWeaponHandler(r.services.UserWeaponService))
 }
 
 // register registers a handler for a message type and action

@@ -108,7 +108,7 @@ func (c *Client) ReadPump() {
 		message, err := valueobject.ParseMessage(messageData)
 		if err != nil {
 			log.Printf("Failed to parse message: %v", err)
-			response := valueobject.NewErrorResponse("", valueobject.CodeInvalidRequest, "Invalid message format")
+			response := valueobject.NewErrorResponseWithUniqueID("unknown", "parse", valueobject.CodeInvalidRequest, "Invalid message format")
 			c.SendResponse(response)
 			continue
 		}

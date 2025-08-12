@@ -3,20 +3,24 @@ package valueobject
 import (
 	"encoding/json"
 	"time"
+	"GameServer/pkg/utils"
 )
 
 // MessageType represents different types of messages
 type MessageType string
 
 const (
-	MessageTypeAuth      MessageType = "auth"
-	MessageTypeHeartbeat MessageType = "heartbeat"
-	MessageTypeEquip     MessageType = "equip"
-	MessageTypeUserEquip MessageType = "userequip"
-	MessageTypePlayer    MessageType = "player"
-	MessageTypeFriend    MessageType = "friend"
-	MessageTypeRank      MessageType = "rank"
-	MessageTypeOnline    MessageType = "online"
+	MessageTypeAuth       MessageType = "auth"
+	MessageTypeHeartbeat  MessageType = "heartbeat"
+	MessageTypeEquip      MessageType = "equip"
+	MessageTypeUserEquip  MessageType = "userequip"
+	MessageTypePlayer     MessageType = "player"
+	MessageTypeFriend     MessageType = "friend"
+	MessageTypeRank       MessageType = "rank"
+	MessageTypeOnline     MessageType = "online"
+	MessageTypeExperience MessageType = "experience"
+	MessageTypeWeapon     MessageType = "weapon"
+	MessageTypeUserWeapon MessageType = "userweapon"
 )
 
 // MessageAction represents different actions within message types
@@ -62,6 +66,23 @@ const (
 
 	// Online actions
 	ActionGetOnlineUsers MessageAction = "getOnlineUsers"
+
+	// Experience actions
+	ActionGetByLevel   MessageAction = "getByLevel"
+	ActionGetAllLevels MessageAction = "getAllLevels"
+
+	// Weapon actions
+	ActionGetWeapon     MessageAction = "getWeapon"
+	ActionGetAllWeapons MessageAction = "getAllWeapons"
+	ActionCreateWeapon  MessageAction = "createWeapon"
+	ActionUpdateWeapon  MessageAction = "updateWeapon"
+	ActionDeleteWeapon  MessageAction = "deleteWeapon"
+
+	// User Weapon actions
+	ActionGetUserWeapons    MessageAction = "getUserWeapons"
+	ActionAddUserWeapon     MessageAction = "addUserWeapon"
+	ActionRemoveUserWeapon  MessageAction = "removeUserWeapon"
+	ActionCheckUserWeapon   MessageAction = "checkUserWeapon"
 )
 
 // Message represents a WebSocket message
@@ -97,6 +118,8 @@ const (
 	CodeInternalError  ResponseCode = 5000
 )
 
+var requestIDGenerator = utils.NewRequestIDGenerator()
+
 // NewSuccessResponse creates a success response
 func NewSuccessResponse(requestID string, data interface{}) *Response {
 	return &Response{
@@ -117,6 +140,32 @@ func NewErrorResponse(requestID string, code ResponseCode, message string) *Resp
 		Message:   message,
 		Data:      nil,
 		RequestID: requestID,
+		Timestamp: time.Now().Unix(),
+	}
+}
+
+// NewSuccessResponseWithUniqueID creates a success response with unique request ID
+func NewSuccessResponseWithUniqueID(msgType MessageType, action MessageAction, data interface{}) *Response {
+	uniqueID := requestIDGenerator.GenerateSimple(string(msgType), string(action))
+	return &Response{
+		Success:   true,
+		Code:      int(CodeSuccess),
+		Message:   "Success",
+		Data:      data,
+		RequestID: uniqueID,
+		Timestamp: time.Now().Unix(),
+	}
+}
+
+// NewErrorResponseWithUniqueID creates an error response with unique request ID
+func NewErrorResponseWithUniqueID(msgType MessageType, action MessageAction, code ResponseCode, message string) *Response {
+	uniqueID := requestIDGenerator.GenerateSimple(string(msgType), string(action))
+	return &Response{
+		Success:   false,
+		Code:      int(code),
+		Message:   message,
+		Data:      nil,
+		RequestID: uniqueID,
 		Timestamp: time.Now().Unix(),
 	}
 }

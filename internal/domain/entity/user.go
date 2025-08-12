@@ -98,6 +98,27 @@ type Experience struct {
 	Value int `json:"value"`
 }
 
+// Weapon represents a weapon entity
+type Weapon struct {
+	WeaponID            int    `json:"weapon_id"`
+	WeaponName          string `json:"weapon_name"`
+	AttackPower         int    `json:"attack_power"`
+	AttackSpeed         int    `json:"attack_speed"`
+	CriticalStrikeRate  int    `json:"critical_strike_rate"`
+	CriticalStrikeDamage int    `json:"critical_strike_damage"`
+	LuckyValue          int    `json:"lucky_value"`
+	EnhancementLevel    int    `json:"enhancement_level"`
+	GrowthValue         int    `json:"growth_value"`
+	Quality             int    `json:"quality"`
+}
+
+// UserWeapon represents a user's weapon ownership
+type UserWeapon struct {
+	ID       int `json:"id"`
+	UserID   int `json:"user_id"`
+	WeaponID int `json:"weapon_id"`
+}
+
 // UserEquip represents equipped items for a user
 type UserEquip struct {
 	ID        int    `json:"id"`

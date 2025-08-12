@@ -17,12 +17,15 @@ type Container struct {
 	Database *sql.DB
 	
 	// Services
-	CacheService     cache.CacheService
-	AuthService      *service.AuthService
-	PlayerService    *service.PlayerService
-	FriendService    *service.FriendService
-	RankingService   *service.RankingService
-	UserEquipService *service.UserEquipService
+	CacheService      cache.CacheService
+	AuthService       *service.AuthService
+	PlayerService     *service.PlayerService
+	FriendService     *service.FriendService
+	RankingService    *service.RankingService
+	UserEquipService  *service.UserEquipService
+	ExperienceService *service.ExperienceService
+	WeaponService     *service.WeaponService
+	UserWeaponService *service.UserWeaponService
 	
 	// Repositories
 	UserRepo        repository.UserRepository
@@ -33,6 +36,8 @@ type Container struct {
 	SourceStoneRepo repository.SourceStoneRepository
 	ExperienceRepo  repository.ExperienceRepository
 	UserEquipRepo   repository.UserEquipRepository
+	WeaponRepo      repository.WeaponRepository
+	UserWeaponRepo  repository.UserWeaponRepository
 	
 	// Domain Services
 	AuthDomainService domainService.AuthDomainService
@@ -67,6 +72,8 @@ func (c *Container) initializeRepositories() error {
 	c.SourceStoneRepo = infraRepo.NewMySQLSourceStoneRepository(c.Database)
 	c.ExperienceRepo = infraRepo.NewMySQLExperienceRepository(c.Database)
 	c.UserEquipRepo = infraRepo.NewMySQLUserEquipRepository(c.Database)
+	c.WeaponRepo = infraRepo.NewMySQLWeaponRepository(c.Database)
+	c.UserWeaponRepo = infraRepo.NewMySQLUserWeaponRepository(c.Database)
 	
 	return nil
 }
@@ -112,17 +119,34 @@ func (c *Container) initializeServices() error {
 		c.UserRepo,
 	)
 	
+	c.ExperienceService = service.NewExperienceService(
+		c.ExperienceRepo,
+	)
+	
+	c.WeaponService = service.NewWeaponService(
+		c.WeaponRepo,
+	)
+	
+	c.UserWeaponService = service.NewUserWeaponService(
+		c.UserWeaponRepo,
+		c.WeaponRepo,
+		c.UserRepo,
+	)
+	
 	return nil
 }
 
 // GetWebSocketServices returns services formatted for WebSocket handlers
 func (c *Container) GetWebSocketServices() *websocket.ServiceContainer {
 	return &websocket.ServiceContainer{
-		AuthService:      c.AuthService,
-		PlayerService:    c.PlayerService,
-		FriendService:    c.FriendService,
-		RankingService:   c.RankingService,
-		UserEquipService: c.UserEquipService,
+		AuthService:       c.AuthService,
+		PlayerService:     c.PlayerService,
+		FriendService:     c.FriendService,
+		RankingService:    c.RankingService,
+		UserEquipService:  c.UserEquipService,
+		ExperienceService: c.ExperienceService,
+		WeaponService:     c.WeaponService,
+		UserWeaponService: c.UserWeaponService,
 	}
 }
 
