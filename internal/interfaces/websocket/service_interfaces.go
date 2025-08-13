@@ -32,6 +32,8 @@ type FriendServiceInterface interface {
 	RejectFriendRequest(userID int, req *dto.FriendActionRequest) error
 	RemoveFriend(userID int, req *dto.RemoveFriendRequest) error
 	GetFriendRanking(userID int) ([]*dto.FriendRankResponse, error)
+	AcceptFriendRequestByUserID(toUserID, fromUserID int) error
+	RejectFriendRequestByUserID(toUserID, fromUserID int) error
 }
 
 // RankingServiceInterface defines the interface for ranking service used by websocket handlers

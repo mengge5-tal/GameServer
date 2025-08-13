@@ -223,6 +223,10 @@ func (h *FriendHandler) Handle(client *Client, message *valueobject.Message) *va
 		return h.handleRejectFriend(client, message)
 	case valueobject.ActionGetFriendRank:
 		return h.handleGetFriendRank(client, message)
+	case valueobject.ActionFriendRequest:
+		return h.handleFriendRequest(client, message)
+	case valueobject.ActionFriendResponse:
+		return h.handleFriendResponse(client, message)
 	default:
 		return valueobject.NewErrorResponseWithUniqueID(message.Type, message.Action, valueobject.CodeInvalidRequest, "Unknown friend action")
 	}
@@ -294,6 +298,39 @@ func (h *FriendHandler) handleGetFriendRank(client *Client, message *valueobject
 		return valueobject.NewErrorResponseWithUniqueID(message.Type, message.Action, valueobject.CodeInternalError, err.Error())
 	}
 	return valueobject.NewSuccessResponseWithUniqueID(message.Type, message.Action, ranking)
+}
+
+func (h *FriendHandler) handleFriendRequest(client *Client, message *valueobject.Message) *valueobject.Response {
+	requests, err := h.friendService.GetFriendRequests(client.GetUserID())
+	if err != nil {
+		return valueobject.NewErrorResponseWithUniqueID(message.Type, message.Action, valueobject.CodeInternalError, err.Error())
+	}
+	return valueobject.NewSuccessResponseWithUniqueID(message.Type, message.Action, requests)
+}
+
+func (h *FriendHandler) handleFriendResponse(client *Client, message *valueobject.Message) *valueobject.Response {
+	var req dto.FriendResponseRequest
+	if err := json.Unmarshal(message.Data, &req); err != nil {
+		return valueobject.NewErrorResponseWithUniqueID(message.Type, message.Action, valueobject.CodeInvalidRequest, "Invalid friend response data")
+	}
+
+	if req.FromUserID <= 0 {
+		return valueobject.NewErrorResponseWithUniqueID(message.Type, message.Action, valueobject.CodeInvalidRequest, "FromUserID must be positive")
+	}
+
+	if req.Accept {
+		err := h.friendService.AcceptFriendRequestByUserID(client.GetUserID(), req.FromUserID)
+		if err != nil {
+			return valueobject.NewErrorResponseWithUniqueID(message.Type, message.Action, valueobject.CodeInternalError, err.Error())
+		}
+		return valueobject.NewSuccessResponseWithUniqueID(message.Type, message.Action, map[string]string{"message": "Friend request accepted"})
+	} else {
+		err := h.friendService.RejectFriendRequestByUserID(client.GetUserID(), req.FromUserID)
+		if err != nil {
+			return valueobject.NewErrorResponseWithUniqueID(message.Type, message.Action, valueobject.CodeInternalError, err.Error())
+		}
+		return valueobject.NewSuccessResponseWithUniqueID(message.Type, message.Action, map[string]string{"message": "Friend request rejected"})
+	}
 }
 
 // RankingHandler handles ranking-related messages

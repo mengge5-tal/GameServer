@@ -105,16 +105,16 @@ func (r *mysqlFriendRepository) AcceptFriendRequest(requestID int) error {
 		return err
 	}
 
-	// Update request status
-	updateQuery := "UPDATE friend_request SET status = 'accepted' WHERE id = ?"
-	_, err = tx.Exec(updateQuery, requestID)
+	// Create friend relationship
+	insertQuery := "INSERT INTO friend (fromuserid, touserid, status) VALUES (?, ?, 'accepted')"
+	_, err = tx.Exec(insertQuery, fromUserID, toUserID)
 	if err != nil {
 		return err
 	}
 
-	// Create friend relationship
-	insertQuery := "INSERT INTO friend (fromuserid, touserid, status) VALUES (?, ?, 'accepted')"
-	_, err = tx.Exec(insertQuery, fromUserID, toUserID)
+	// Delete the processed request
+	deleteQuery := "DELETE FROM friend_request WHERE id = ?"
+	_, err = tx.Exec(deleteQuery, requestID)
 	if err != nil {
 		return err
 	}
@@ -124,7 +124,7 @@ func (r *mysqlFriendRepository) AcceptFriendRequest(requestID int) error {
 
 // RejectFriendRequest rejects a friend request
 func (r *mysqlFriendRepository) RejectFriendRequest(requestID int) error {
-	query := "UPDATE friend_request SET status = 'rejected' WHERE id = ?"
+	query := "DELETE FROM friend_request WHERE id = ?"
 	_, err := r.db.Exec(query, requestID)
 	return err
 }

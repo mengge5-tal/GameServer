@@ -94,6 +94,8 @@ func (r *messageRouter) registerHandlers() {
 	r.register(valueobject.MessageTypeFriend, valueobject.ActionAcceptFriend, NewFriendHandler(r.services.FriendService))
 	r.register(valueobject.MessageTypeFriend, valueobject.ActionRejectFriend, NewFriendHandler(r.services.FriendService))
 	r.register(valueobject.MessageTypeFriend, valueobject.ActionGetFriendRank, NewFriendHandler(r.services.FriendService))
+	r.register(valueobject.MessageTypeFriend, valueobject.ActionFriendRequest, NewFriendHandler(r.services.FriendService))
+	r.register(valueobject.MessageTypeFriend, valueobject.ActionFriendResponse, NewFriendHandler(r.services.FriendService))
 
 	// Ranking handlers
 	r.register(valueobject.MessageTypeRank, valueobject.ActionGetAllRank, NewRankingHandler(r.services.RankingService))

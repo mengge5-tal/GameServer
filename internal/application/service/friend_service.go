@@ -242,3 +242,55 @@ func (s *FriendService) GetFriendRanking(userID int) ([]*dto.FriendRankResponse,
 
 	return response, nil
 }
+
+// AcceptFriendRequestByUserID accepts a friend request by user IDs
+func (s *FriendService) AcceptFriendRequestByUserID(toUserID, fromUserID int) error {
+	// Find the friend request by user IDs
+	requests, err := s.friendRepo.GetFriendRequestsByUserID(toUserID)
+	if err != nil {
+		return err
+	}
+
+	var requestID int
+	found := false
+	for _, req := range requests {
+		if req.FromUserID == fromUserID && req.ToUserID == toUserID && req.Status == "pending" {
+			requestID = req.ID
+			found = true
+			break
+		}
+	}
+
+	if !found {
+		return entity.NewDomainError("friend request not found or already processed")
+	}
+
+	// AcceptFriendRequest will now delete the request after processing
+	return s.friendRepo.AcceptFriendRequest(requestID)
+}
+
+// RejectFriendRequestByUserID rejects a friend request by user IDs
+func (s *FriendService) RejectFriendRequestByUserID(toUserID, fromUserID int) error {
+	// Find the friend request by user IDs
+	requests, err := s.friendRepo.GetFriendRequestsByUserID(toUserID)
+	if err != nil {
+		return err
+	}
+
+	var requestID int
+	found := false
+	for _, req := range requests {
+		if req.FromUserID == fromUserID && req.ToUserID == toUserID && req.Status == "pending" {
+			requestID = req.ID
+			found = true
+			break
+		}
+	}
+
+	if !found {
+		return entity.NewDomainError("friend request not found or already processed")
+	}
+
+	// RejectFriendRequest will now delete the request after processing
+	return s.friendRepo.RejectFriendRequest(requestID)
+}

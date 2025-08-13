@@ -59,6 +59,8 @@ const (
 	ActionAcceptFriend     MessageAction = "acceptFriend"
 	ActionRejectFriend     MessageAction = "rejectFriend"
 	ActionGetFriendRank    MessageAction = "getFriendRank"
+	ActionFriendRequest    MessageAction = "friendRequest"
+	ActionFriendResponse   MessageAction = "friendResponse"
 
 	// Rank actions
 	ActionGetAllRank MessageAction = "getAllRank"

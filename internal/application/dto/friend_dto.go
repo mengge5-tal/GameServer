@@ -39,6 +39,12 @@ type FriendActionRequest struct {
 	RequestID int `json:"request_id"`
 }
 
+// FriendResponseRequest represents friend response request (accept/reject by user ID)
+type FriendResponseRequest struct {
+	FromUserID int  `json:"fromuserid"`
+	Accept     bool `json:"accept"`
+}
+
 // RemoveFriendRequest represents remove friend request
 type RemoveFriendRequest struct {
 	FriendUserID int `json:"friend_userid"`
