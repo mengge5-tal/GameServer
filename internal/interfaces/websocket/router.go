@@ -124,6 +124,17 @@ func (r *messageRouter) registerHandlers() {
 	r.register(valueobject.MessageTypeUserWeapon, valueobject.ActionAddUserWeapon, NewUserWeaponHandler(r.services.UserWeaponService))
 	r.register(valueobject.MessageTypeUserWeapon, valueobject.ActionRemoveUserWeapon, NewUserWeaponHandler(r.services.UserWeaponService))
 	r.register(valueobject.MessageTypeUserWeapon, valueobject.ActionCheckUserWeapon, NewUserWeaponHandler(r.services.UserWeaponService))
+
+	// Source Stone handlers
+	r.register(valueobject.MessageTypeSourceStone, valueobject.ActionGetSourceStone, NewSourceStoneHandler(r.services.SourceStoneService))
+	r.register(valueobject.MessageTypeSourceStone, valueobject.ActionGetAllSourceStones, NewSourceStoneHandler(r.services.SourceStoneService))
+
+	// User Source Stone handlers
+	r.register(valueobject.MessageTypeUserSourceStone, valueobject.ActionGetUserSourceStones, NewUserSourceStoneHandler(r.services.UserSourceStoneService))
+	r.register(valueobject.MessageTypeUserSourceStone, valueobject.ActionAddUserSourceStone, NewUserSourceStoneHandler(r.services.UserSourceStoneService))
+	r.register(valueobject.MessageTypeUserSourceStone, valueobject.ActionUpdateUserSourceStone, NewUserSourceStoneHandler(r.services.UserSourceStoneService))
+	r.register(valueobject.MessageTypeUserSourceStone, valueobject.ActionRemoveUserSourceStone, NewUserSourceStoneHandler(r.services.UserSourceStoneService))
+	r.register(valueobject.MessageTypeUserSourceStone, valueobject.ActionCheckUserSourceStone, NewUserSourceStoneHandler(r.services.UserSourceStoneService))
 }
 
 // register registers a handler for a message type and action

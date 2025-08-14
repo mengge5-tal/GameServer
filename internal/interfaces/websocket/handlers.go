@@ -333,6 +333,171 @@ func (h *FriendHandler) handleFriendResponse(client *Client, message *valueobjec
 	}
 }
 
+// SourceStoneHandler handles source stone messages
+type SourceStoneHandler struct {
+	sourceStoneService SourceStoneServiceInterface
+}
+
+// NewSourceStoneHandler creates a new source stone handler
+func NewSourceStoneHandler(sourceStoneService SourceStoneServiceInterface) *SourceStoneHandler {
+	return &SourceStoneHandler{sourceStoneService: sourceStoneService}
+}
+
+// Handle handles source stone messages
+func (h *SourceStoneHandler) Handle(client *Client, message *valueobject.Message) *valueobject.Response {
+	switch message.Action {
+	case valueobject.ActionGetSourceStone:
+		return h.handleGetSourceStone(client, message)
+	case valueobject.ActionGetAllSourceStones:
+		return h.handleGetAllSourceStones(client, message)
+	default:
+		return valueobject.NewErrorResponseWithUniqueID(message.Type, message.Action, valueobject.CodeInvalidRequest, "Unknown source stone action")
+	}
+}
+
+func (h *SourceStoneHandler) handleGetSourceStone(client *Client, message *valueobject.Message) *valueobject.Response {
+	var req dto.GetSourceStoneRequest
+	if err := json.Unmarshal(message.Data, &req); err != nil {
+		return valueobject.NewErrorResponseWithUniqueID(message.Type, message.Action, valueobject.CodeInvalidRequest, "Invalid source stone ID data")
+	}
+
+	if req.SourceStoneID <= 0 {
+		return valueobject.NewErrorResponseWithUniqueID(message.Type, message.Action, valueobject.CodeInvalidRequest, "Source stone ID must be positive")
+	}
+
+	sourceStone, err := h.sourceStoneService.GetSourceStoneByID(req.SourceStoneID)
+	if err != nil {
+		return valueobject.NewErrorResponseWithUniqueID(message.Type, message.Action, valueobject.CodeInternalError, err.Error())
+	}
+	return valueobject.NewSuccessResponseWithUniqueID(message.Type, message.Action, sourceStone)
+}
+
+func (h *SourceStoneHandler) handleGetAllSourceStones(client *Client, message *valueobject.Message) *valueobject.Response {
+	sourceStones, err := h.sourceStoneService.GetAllSourceStones()
+	if err != nil {
+		return valueobject.NewErrorResponseWithUniqueID(message.Type, message.Action, valueobject.CodeInternalError, err.Error())
+	}
+	return valueobject.NewSuccessResponseWithUniqueID(message.Type, message.Action, sourceStones)
+}
+
+// UserSourceStoneHandler handles user source stone messages
+type UserSourceStoneHandler struct {
+	userSourceStoneService UserSourceStoneServiceInterface
+}
+
+// NewUserSourceStoneHandler creates a new user source stone handler
+func NewUserSourceStoneHandler(userSourceStoneService UserSourceStoneServiceInterface) *UserSourceStoneHandler {
+	return &UserSourceStoneHandler{userSourceStoneService: userSourceStoneService}
+}
+
+// Handle handles user source stone messages
+func (h *UserSourceStoneHandler) Handle(client *Client, message *valueobject.Message) *valueobject.Response {
+	if !client.IsAuthenticated() {
+		return valueobject.NewErrorResponseWithUniqueID(message.Type, message.Action, valueobject.CodeUnauthorized, "Authentication required")
+	}
+
+	switch message.Action {
+	case valueobject.ActionGetUserSourceStones:
+		return h.handleGetUserSourceStones(client, message)
+	case valueobject.ActionAddUserSourceStone:
+		return h.handleAddUserSourceStone(client, message)
+	case valueobject.ActionUpdateUserSourceStone:
+		return h.handleUpdateUserSourceStone(client, message)
+	case valueobject.ActionRemoveUserSourceStone:
+		return h.handleRemoveUserSourceStone(client, message)
+	case valueobject.ActionCheckUserSourceStone:
+		return h.handleCheckUserSourceStone(client, message)
+	default:
+		return valueobject.NewErrorResponseWithUniqueID(message.Type, message.Action, valueobject.CodeInvalidRequest, "Unknown user source stone action")
+	}
+}
+
+func (h *UserSourceStoneHandler) handleGetUserSourceStones(client *Client, message *valueobject.Message) *valueobject.Response {
+	var req dto.GetUserSourceStonesRequest
+	if err := json.Unmarshal(message.Data, &req); err != nil {
+		return valueobject.NewErrorResponseWithUniqueID(message.Type, message.Action, valueobject.CodeInvalidRequest, "Invalid get user source stones data")
+	}
+
+	// If no user ID provided, use client's user ID
+	userID := req.UserID
+	if userID <= 0 {
+		userID = client.GetUserID()
+	}
+
+	sourceStones, err := h.userSourceStoneService.GetUserSourceStones(userID, req.WithDetails)
+	if err != nil {
+		return valueobject.NewErrorResponseWithUniqueID(message.Type, message.Action, valueobject.CodeInternalError, err.Error())
+	}
+	return valueobject.NewSuccessResponseWithUniqueID(message.Type, message.Action, sourceStones)
+}
+
+func (h *UserSourceStoneHandler) handleAddUserSourceStone(client *Client, message *valueobject.Message) *valueobject.Response {
+	var req dto.AddUserSourceStoneRequest
+	if err := json.Unmarshal(message.Data, &req); err != nil {
+		return valueobject.NewErrorResponseWithUniqueID(message.Type, message.Action, valueobject.CodeInvalidRequest, "Invalid add user source stone data")
+	}
+
+	// If no user ID provided, use client's user ID
+	if req.UserID <= 0 {
+		req.UserID = client.GetUserID()
+	}
+
+	userSourceStone, err := h.userSourceStoneService.AddUserSourceStone(&req)
+	if err != nil {
+		return valueobject.NewErrorResponseWithUniqueID(message.Type, message.Action, valueobject.CodeValidationError, err.Error())
+	}
+	return valueobject.NewSuccessResponseWithUniqueID(message.Type, message.Action, userSourceStone)
+}
+
+func (h *UserSourceStoneHandler) handleUpdateUserSourceStone(client *Client, message *valueobject.Message) *valueobject.Response {
+	var req dto.UpdateUserSourceStoneRequest
+	if err := json.Unmarshal(message.Data, &req); err != nil {
+		return valueobject.NewErrorResponseWithUniqueID(message.Type, message.Action, valueobject.CodeInvalidRequest, "Invalid update user source stone data")
+	}
+
+	userSourceStone, err := h.userSourceStoneService.UpdateUserSourceStone(&req)
+	if err != nil {
+		return valueobject.NewErrorResponseWithUniqueID(message.Type, message.Action, valueobject.CodeValidationError, err.Error())
+	}
+	return valueobject.NewSuccessResponseWithUniqueID(message.Type, message.Action, userSourceStone)
+}
+
+func (h *UserSourceStoneHandler) handleRemoveUserSourceStone(client *Client, message *valueobject.Message) *valueobject.Response {
+	var req dto.RemoveUserSourceStoneRequest
+	if err := json.Unmarshal(message.Data, &req); err != nil {
+		return valueobject.NewErrorResponseWithUniqueID(message.Type, message.Action, valueobject.CodeInvalidRequest, "Invalid remove user source stone data")
+	}
+
+	// If no user ID provided, use client's user ID
+	if req.UserID <= 0 {
+		req.UserID = client.GetUserID()
+	}
+
+	err := h.userSourceStoneService.RemoveUserSourceStone(&req)
+	if err != nil {
+		return valueobject.NewErrorResponseWithUniqueID(message.Type, message.Action, valueobject.CodeValidationError, err.Error())
+	}
+	return valueobject.NewSuccessResponseWithUniqueID(message.Type, message.Action, map[string]string{"message": "User source stone removed successfully"})
+}
+
+func (h *UserSourceStoneHandler) handleCheckUserSourceStone(client *Client, message *valueobject.Message) *valueobject.Response {
+	var req dto.CheckUserSourceStoneRequest
+	if err := json.Unmarshal(message.Data, &req); err != nil {
+		return valueobject.NewErrorResponseWithUniqueID(message.Type, message.Action, valueobject.CodeInvalidRequest, "Invalid check user source stone data")
+	}
+
+	// If no user ID provided, use client's user ID
+	if req.UserID <= 0 {
+		req.UserID = client.GetUserID()
+	}
+
+	result, err := h.userSourceStoneService.CheckUserSourceStone(&req)
+	if err != nil {
+		return valueobject.NewErrorResponseWithUniqueID(message.Type, message.Action, valueobject.CodeInternalError, err.Error())
+	}
+	return valueobject.NewSuccessResponseWithUniqueID(message.Type, message.Action, result)
+}
+
 // RankingHandler handles ranking-related messages
 type RankingHandler struct {
 	rankingService RankingServiceInterface

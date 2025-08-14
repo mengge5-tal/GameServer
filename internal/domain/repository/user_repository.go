@@ -62,12 +62,8 @@ type EquipmentRepository interface {
 
 // SourceStoneRepository defines the interface for source stone data access
 type SourceStoneRepository interface {
-	GetByUserID(userID int) ([]*entity.SourceStone, error)
-	GetByEquipID(equipID int) (*entity.SourceStone, error)
-	Create(sourceStone *entity.SourceStone) error
-	Update(sourceStone *entity.SourceStone) error
-	Delete(equipID int) error
-	UpdateCount(equipID, count int) error
+	GetByID(sourcestoneID int) (*entity.SourceStone, error)
+	GetAll() ([]*entity.SourceStone, error)
 }
 
 // ExperienceRepository defines the interface for experience data access
@@ -94,4 +90,16 @@ type UserWeaponRepository interface {
 	Delete(id int) error
 	DeleteByUserAndWeapon(userID, weaponID int) error
 	UserOwnsWeapon(userID, weaponID int) (bool, error)
+}
+
+// UserSourceStoneRepository defines the interface for user source stone ownership data access
+type UserSourceStoneRepository interface {
+	GetByID(id int) (*entity.UserSourceStone, error)
+	GetByUserID(userID int) ([]*entity.UserSourceStone, error)
+	GetByUserAndSourceStone(userID, sourcestoneID int) (*entity.UserSourceStone, error)
+	Create(userSourceStone *entity.UserSourceStone) error
+	Update(userSourceStone *entity.UserSourceStone) error
+	Delete(id int) error
+	DeleteByUserAndSourceStone(userID, sourcestoneID int) error
+	UserOwnsSourceStone(userID, sourcestoneID int) (bool, error)
 }

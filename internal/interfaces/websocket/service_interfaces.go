@@ -20,7 +20,6 @@ type PlayerServiceInterface interface {
 	GetUserEquipment(userID int) ([]*dto.EquipmentResponse, error)
 	SaveEquipment(req *dto.SaveEquipmentRequest) (*dto.EquipmentResponse, error)
 	DeleteEquipment(equipID, userID int) error
-	GetUserSourceStones(userID int) ([]*dto.SourceStoneResponse, error)
 }
 
 // FriendServiceInterface defines the interface for friend service used by websocket handlers
@@ -75,4 +74,20 @@ type UserWeaponServiceInterface interface {
 	RemoveUserWeapon(req *dto.RemoveUserWeaponRequest) error
 	RemoveUserWeaponByID(id int) error
 	CheckUserWeapon(req *dto.CheckUserWeaponRequest) (*dto.CheckUserWeaponResponse, error)
+}
+
+// SourceStoneServiceInterface defines the interface for source stone service used by websocket handlers
+type SourceStoneServiceInterface interface {
+	GetSourceStoneByID(sourcestoneID int) (*dto.SourceStoneResponse, error)
+	GetAllSourceStones() ([]*dto.SourceStoneResponse, error)
+}
+
+// UserSourceStoneServiceInterface defines the interface for user source stone service used by websocket handlers
+type UserSourceStoneServiceInterface interface {
+	GetUserSourceStones(userID int, withDetails bool) (interface{}, error)
+	AddUserSourceStone(req *dto.AddUserSourceStoneRequest) (*dto.UserSourceStoneResponse, error)
+	UpdateUserSourceStone(req *dto.UpdateUserSourceStoneRequest) (*dto.UserSourceStoneResponse, error)
+	RemoveUserSourceStone(req *dto.RemoveUserSourceStoneRequest) error
+	RemoveUserSourceStoneByID(id int) error
+	CheckUserSourceStone(req *dto.CheckUserSourceStoneRequest) (*dto.CheckUserSourceStoneResponse, error)
 }

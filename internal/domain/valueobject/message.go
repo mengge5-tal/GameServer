@@ -19,8 +19,10 @@ const (
 	MessageTypeRank       MessageType = "rank"
 	MessageTypeOnline     MessageType = "online"
 	MessageTypeExperience MessageType = "experience"
-	MessageTypeWeapon     MessageType = "weapon"
-	MessageTypeUserWeapon MessageType = "userweapon"
+	MessageTypeWeapon          MessageType = "weapon"
+	MessageTypeUserWeapon      MessageType = "userweapon"
+	MessageTypeSourceStone     MessageType = "sourcestone"
+	MessageTypeUserSourceStone MessageType = "usersourcestone"
 )
 
 // MessageAction represents different actions within message types
@@ -85,6 +87,17 @@ const (
 	ActionAddUserWeapon     MessageAction = "addUserWeapon"
 	ActionRemoveUserWeapon  MessageAction = "removeUserWeapon"
 	ActionCheckUserWeapon   MessageAction = "checkUserWeapon"
+
+	// Source Stone actions
+	ActionGetSourceStone     MessageAction = "getSourceStone"
+	ActionGetAllSourceStones MessageAction = "getAllSourceStones"
+
+	// User Source Stone actions
+	ActionGetUserSourceStones    MessageAction = "getUserSourceStones"
+	ActionAddUserSourceStone     MessageAction = "addUserSourceStone"
+	ActionUpdateUserSourceStone  MessageAction = "updateUserSourceStone"
+	ActionRemoveUserSourceStone  MessageAction = "removeUserSourceStone"
+	ActionCheckUserSourceStone   MessageAction = "checkUserSourceStone"
 )
 
 // Message represents a WebSocket message

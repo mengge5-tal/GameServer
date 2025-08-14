@@ -16,42 +16,15 @@ func NewMySQLSourceStoneRepository(db *sql.DB) repository.SourceStoneRepository 
 	return &mysqlSourceStoneRepository{db: db}
 }
 
-// GetByUserID retrieves all source stones for a user
-func (r *mysqlSourceStoneRepository) GetByUserID(userID int) ([]*entity.SourceStone, error) {
-	query := `SELECT equipid, sourcetype, count, quality, userid 
-			  FROM sourcestone WHERE userid = ?`
-	
-	rows, err := r.db.Query(query, userID)
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-
-	var sourceStones []*entity.SourceStone
-	for rows.Next() {
-		stone := &entity.SourceStone{}
-		err := rows.Scan(
-			&stone.EquipID, &stone.SourceType, &stone.Count,
-			&stone.Quality, &stone.UserID,
-		)
-		if err != nil {
-			return nil, err
-		}
-		sourceStones = append(sourceStones, stone)
-	}
-
-	return sourceStones, rows.Err()
-}
-
-// GetByEquipID retrieves source stone by equipment ID
-func (r *mysqlSourceStoneRepository) GetByEquipID(equipID int) (*entity.SourceStone, error) {
+// GetByID retrieves source stone by ID
+func (r *mysqlSourceStoneRepository) GetByID(sourcestoneID int) (*entity.SourceStone, error) {
 	stone := &entity.SourceStone{}
-	query := `SELECT equipid, sourcetype, count, quality, userid 
-			  FROM sourcestone WHERE equipid = ?`
+	query := `SELECT sourcestoneid, sourcestonename, sourcestonequality, sourcestoneeffect 
+			  FROM sourcestone WHERE sourcestoneid = ?`
 	
-	err := r.db.QueryRow(query, equipID).Scan(
-		&stone.EquipID, &stone.SourceType, &stone.Count,
-		&stone.Quality, &stone.UserID,
+	err := r.db.QueryRow(query, sourcestoneID).Scan(
+		&stone.SourceStoneID, &stone.SourceStoneName, 
+		&stone.SourceStoneQuality, &stone.SourceStoneEffect,
 	)
 	if err != nil {
 		if err == sql.ErrNoRows {
@@ -62,40 +35,29 @@ func (r *mysqlSourceStoneRepository) GetByEquipID(equipID int) (*entity.SourceSt
 	return stone, nil
 }
 
-// Create creates a new source stone
-func (r *mysqlSourceStoneRepository) Create(sourceStone *entity.SourceStone) error {
-	query := `INSERT INTO sourcestone (equipid, sourcetype, count, quality, userid) 
-			  VALUES (?, ?, ?, ?, ?)`
+// GetAll retrieves all source stones
+func (r *mysqlSourceStoneRepository) GetAll() ([]*entity.SourceStone, error) {
+	query := `SELECT sourcestoneid, sourcestonename, sourcestonequality, sourcestoneeffect 
+			  FROM sourcestone ORDER BY sourcestoneid ASC`
 	
-	_, err := r.db.Exec(query,
-		sourceStone.EquipID, sourceStone.SourceType, sourceStone.Count,
-		sourceStone.Quality, sourceStone.UserID,
-	)
-	return err
-}
+	rows, err := r.db.Query(query)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
 
-// Update updates an existing source stone
-func (r *mysqlSourceStoneRepository) Update(sourceStone *entity.SourceStone) error {
-	query := `UPDATE sourcestone SET sourcetype = ?, count = ?, quality = ?, userid = ? 
-			  WHERE equipid = ?`
-	
-	_, err := r.db.Exec(query,
-		sourceStone.SourceType, sourceStone.Count, sourceStone.Quality,
-		sourceStone.UserID, sourceStone.EquipID,
-	)
-	return err
-}
+	var sourceStones []*entity.SourceStone
+	for rows.Next() {
+		stone := &entity.SourceStone{}
+		err := rows.Scan(
+			&stone.SourceStoneID, &stone.SourceStoneName,
+			&stone.SourceStoneQuality, &stone.SourceStoneEffect,
+		)
+		if err != nil {
+			return nil, err
+		}
+		sourceStones = append(sourceStones, stone)
+	}
 
-// Delete deletes a source stone by equipment ID
-func (r *mysqlSourceStoneRepository) Delete(equipID int) error {
-	query := "DELETE FROM sourcestone WHERE equipid = ?"
-	_, err := r.db.Exec(query, equipID)
-	return err
-}
-
-// UpdateCount updates the count of a source stone
-func (r *mysqlSourceStoneRepository) UpdateCount(equipID, count int) error {
-	query := "UPDATE sourcestone SET count = ? WHERE equipid = ?"
-	_, err := r.db.Exec(query, count, equipID)
-	return err
+	return sourceStones, rows.Err()
 }

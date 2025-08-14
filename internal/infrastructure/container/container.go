@@ -17,27 +17,30 @@ type Container struct {
 	Database *sql.DB
 	
 	// Services
-	CacheService      cache.CacheService
-	AuthService       *service.AuthService
-	PlayerService     *service.PlayerService
-	FriendService     *service.FriendService
-	RankingService    *service.RankingService
-	UserEquipService  *service.UserEquipService
-	ExperienceService *service.ExperienceService
-	WeaponService     *service.WeaponService
-	UserWeaponService *service.UserWeaponService
+	CacheService           cache.CacheService
+	AuthService            *service.AuthService
+	PlayerService          *service.PlayerService
+	FriendService          *service.FriendService
+	RankingService         *service.RankingService
+	UserEquipService       *service.UserEquipService
+	ExperienceService      *service.ExperienceService
+	WeaponService          *service.WeaponService
+	UserWeaponService      *service.UserWeaponService
+	SourceStoneService     *service.SourceStoneService
+	UserSourceStoneService *service.UserSourceStoneService
 	
 	// Repositories
-	UserRepo        repository.UserRepository
-	PlayerRepo      repository.PlayerRepository
-	FriendRepo      repository.FriendRepository
-	RankingRepo     repository.RankingRepository
-	EquipmentRepo   repository.EquipmentRepository
-	SourceStoneRepo repository.SourceStoneRepository
-	ExperienceRepo  repository.ExperienceRepository
-	UserEquipRepo   repository.UserEquipRepository
-	WeaponRepo      repository.WeaponRepository
-	UserWeaponRepo  repository.UserWeaponRepository
+	UserRepo              repository.UserRepository
+	PlayerRepo            repository.PlayerRepository
+	FriendRepo            repository.FriendRepository
+	RankingRepo           repository.RankingRepository
+	EquipmentRepo         repository.EquipmentRepository
+	SourceStoneRepo       repository.SourceStoneRepository
+	ExperienceRepo        repository.ExperienceRepository
+	UserEquipRepo         repository.UserEquipRepository
+	WeaponRepo            repository.WeaponRepository
+	UserWeaponRepo        repository.UserWeaponRepository
+	UserSourceStoneRepo   repository.UserSourceStoneRepository
 	
 	// Domain Services
 	AuthDomainService domainService.AuthDomainService
@@ -74,6 +77,7 @@ func (c *Container) initializeRepositories() error {
 	c.UserEquipRepo = infraRepo.NewMySQLUserEquipRepository(c.Database)
 	c.WeaponRepo = infraRepo.NewMySQLWeaponRepository(c.Database)
 	c.UserWeaponRepo = infraRepo.NewMySQLUserWeaponRepository(c.Database)
+	c.UserSourceStoneRepo = infraRepo.NewMySQLUserSourceStoneRepository(c.Database)
 	
 	return nil
 }
@@ -97,7 +101,6 @@ func (c *Container) initializeServices() error {
 	c.PlayerService = service.NewPlayerService(
 		c.PlayerRepo,
 		c.EquipmentRepo,
-		c.SourceStoneRepo,
 		c.CacheService,
 	)
 	
@@ -133,20 +136,32 @@ func (c *Container) initializeServices() error {
 		c.UserRepo,
 	)
 	
+	c.SourceStoneService = service.NewSourceStoneService(
+		c.SourceStoneRepo,
+	)
+	
+	c.UserSourceStoneService = service.NewUserSourceStoneService(
+		c.UserSourceStoneRepo,
+		c.SourceStoneRepo,
+		c.UserRepo,
+	)
+	
 	return nil
 }
 
 // GetWebSocketServices returns services formatted for WebSocket handlers
 func (c *Container) GetWebSocketServices() *websocket.ServiceContainer {
 	return &websocket.ServiceContainer{
-		AuthService:       c.AuthService,
-		PlayerService:     c.PlayerService,
-		FriendService:     c.FriendService,
-		RankingService:    c.RankingService,
-		UserEquipService:  c.UserEquipService,
-		ExperienceService: c.ExperienceService,
-		WeaponService:     c.WeaponService,
-		UserWeaponService: c.UserWeaponService,
+		AuthService:           c.AuthService,
+		PlayerService:         c.PlayerService,
+		FriendService:         c.FriendService,
+		RankingService:        c.RankingService,
+		UserEquipService:      c.UserEquipService,
+		ExperienceService:     c.ExperienceService,
+		WeaponService:         c.WeaponService,
+		UserWeaponService:     c.UserWeaponService,
+		SourceStoneService:    c.SourceStoneService,
+		UserSourceStoneService: c.UserSourceStoneService,
 	}
 }
 

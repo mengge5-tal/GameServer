@@ -85,11 +85,10 @@ type Equipment struct {
 
 // SourceStone represents a source stone entity
 type SourceStone struct {
-	EquipID    int `json:"equipid"`
-	SourceType int `json:"sourcetype"`
-	Count      int `json:"count"`
-	Quality    int `json:"quality"`
-	UserID     int `json:"userid"`
+	SourceStoneID      int    `json:"sourcestoneid"`
+	SourceStoneName    string `json:"sourcestonename"`
+	SourceStoneQuality string `json:"sourcestonequality"`
+	SourceStoneEffect  string `json:"sourcestoneeffect"`
 }
 
 // Experience represents experience level mapping
@@ -117,6 +116,14 @@ type UserWeapon struct {
 	ID       int `json:"id"`
 	UserID   int `json:"user_id"`
 	WeaponID int `json:"weapon_id"`
+}
+
+// UserSourceStone represents a user's source stone ownership
+type UserSourceStone struct {
+	ID                int `json:"id"`
+	UserID            int `json:"userid"`
+	SourceStoneID     int `json:"sourcestoneid"`
+	SourceStoneCount  int `json:"sourcestonecount"`
 }
 
 // UserEquip represents equipped items for a user

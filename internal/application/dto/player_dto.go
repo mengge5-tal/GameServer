@@ -114,12 +114,3 @@ func (req *SaveEquipmentRequest) GetEffectiveEquipmentData() EquipmentData {
 		Type:          req.Type,
 	}
 }
-
-// SourceStoneResponse represents source stone response
-type SourceStoneResponse struct {
-	EquipID    int `json:"equipid"`
-	SourceType int `json:"sourcetype"`
-	Count      int `json:"count"`
-	Quality    int `json:"quality"`
-	UserID     int `json:"userid"`
-}

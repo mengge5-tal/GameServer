@@ -10,24 +10,21 @@ import (
 
 // PlayerService handles player-related business logic
 type PlayerService struct {
-	playerRepo     repository.PlayerRepository
-	equipmentRepo  repository.EquipmentRepository
-	sourceStoneRepo repository.SourceStoneRepository
-	cacheService   cache.CacheService
+	playerRepo    repository.PlayerRepository
+	equipmentRepo repository.EquipmentRepository
+	cacheService  cache.CacheService
 }
 
 // NewPlayerService creates a new player service
 func NewPlayerService(
 	playerRepo repository.PlayerRepository,
 	equipmentRepo repository.EquipmentRepository,
-	sourceStoneRepo repository.SourceStoneRepository,
 	cacheService cache.CacheService,
 ) *PlayerService {
 	return &PlayerService{
-		playerRepo:      playerRepo,
-		equipmentRepo:   equipmentRepo,
-		sourceStoneRepo: sourceStoneRepo,
-		cacheService:    cacheService,
+		playerRepo:    playerRepo,
+		equipmentRepo: equipmentRepo,
+		cacheService:  cacheService,
 	}
 }
 
@@ -222,27 +219,6 @@ func (s *PlayerService) DeleteEquipment(equipID, userID int) error {
 	s.cacheService.Delete(cacheKey)
 
 	return nil
-}
-
-// GetUserSourceStones retrieves all source stones for a user
-func (s *PlayerService) GetUserSourceStones(userID int) ([]*dto.SourceStoneResponse, error) {
-	sourceStones, err := s.sourceStoneRepo.GetByUserID(userID)
-	if err != nil {
-		return nil, err
-	}
-
-	var response []*dto.SourceStoneResponse
-	for _, stone := range sourceStones {
-		response = append(response, &dto.SourceStoneResponse{
-			EquipID:    stone.EquipID,
-			SourceType: stone.SourceType,
-			Count:      stone.Count,
-			Quality:    stone.Quality,
-			UserID:     stone.UserID,
-		})
-	}
-
-	return response, nil
 }
 
 // convertEquipmentToDTO converts equipment entities to DTOs
