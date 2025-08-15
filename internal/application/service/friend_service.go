@@ -55,8 +55,7 @@ func (s *FriendService) GetFriends(userID int) ([]*dto.FriendResponse, error) {
 
 		response = append(response, &dto.FriendResponse{
 			ID:             friend.ID,
-			FromUserID:     friend.FromUserID,
-			ToUserID:       friend.ToUserID,
+			FriendID:       friendUserID,
 			Status:         friend.Status,
 			CreatedAt:      friend.CreatedAt,
 			UpdatedAt:      friend.UpdatedAt,

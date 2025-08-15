@@ -5,8 +5,7 @@ import "time"
 // FriendResponse represents friend response data
 type FriendResponse struct {
 	ID         int       `json:"id"`
-	FromUserID int       `json:"fromuserid"`
-	ToUserID   int       `json:"touserid"`
+	FriendID   int       `json:"friend_id"`
 	Status     string    `json:"status"`
 	CreatedAt  time.Time `json:"created_at"`
 	UpdatedAt  time.Time `json:"updated_at"`
