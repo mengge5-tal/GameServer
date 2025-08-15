@@ -83,6 +83,13 @@ func (s *FriendService) GetFriendRequests(userID int) ([]*dto.FriendRequestRespo
 			continue // Skip this request if we can't get user info
 		}
 
+		// Get requester's level
+		requesterPlayer, err := s.playerRepo.GetByUserID(request.FromUserID)
+		requesterLevel := 1
+		if err == nil && requesterPlayer != nil {
+			requesterLevel = requesterPlayer.Level
+		}
+
 		response = append(response, &dto.FriendRequestResponse{
 			ID:                request.ID,
 			FromUserID:        request.FromUserID,
@@ -92,6 +99,7 @@ func (s *FriendService) GetFriendRequests(userID int) ([]*dto.FriendRequestRespo
 			CreatedAt:         request.CreatedAt,
 			UpdatedAt:         request.UpdatedAt,
 			RequesterUsername: requester.Username,
+			RequesterLevel:    requesterLevel,
 		})
 	}
 

@@ -26,6 +26,7 @@ type FriendRequestResponse struct {
 	UpdatedAt  time.Time `json:"updated_at"`
 	// Additional requester info
 	RequesterUsername string `json:"requester_username,omitempty"`
+	RequesterLevel    int    `json:"requester_level,omitempty"`
 }
 
 // AddFriendRequest represents add friend request
