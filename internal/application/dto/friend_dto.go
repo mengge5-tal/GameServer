@@ -65,3 +65,12 @@ type RecommendedFriendResponse struct {
 	Username string `json:"name"`
 	Level    int    `json:"level"`
 }
+
+// FriendRequestNotification represents a real-time friend request notification
+type FriendRequestNotification struct {
+	FromUserID      int    `json:"fromuserid"`
+	FromUsername    string `json:"fromusername"`
+	RequesterLevel  int    `json:"requesterlevel"`
+	Message         string `json:"message"`
+	RequestID       int    `json:"requestid,omitempty"`
+}

@@ -77,8 +77,17 @@ func main() {
 	resetScheduler := scheduler.NewDailyResetScheduler(container.KillCountService)
 	resetScheduler.Start()
 
-	// Create WebSocket hub
-	hub := websocket.NewHub(container.GetWebSocketServices())
+	// Initialize notification service first
+	// Create a temporary hub to get the notification functionality
+	tempServices := container.GetWebSocketServices()
+	hub := websocket.NewHub(tempServices)
+	
+	// Now set notification service and get updated services
+	container.SetNotificationService(hub)
+	updatedServices := container.GetWebSocketServices()
+	
+	// Update the hub with the new services that include notification support
+	hub.UpdateServices(updatedServices)
 	go hub.Run()
 
 	logger.Info("WebSocket hub started")

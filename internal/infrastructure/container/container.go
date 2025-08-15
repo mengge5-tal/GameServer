@@ -21,6 +21,7 @@ type Container struct {
 	AuthService            *service.AuthService
 	PlayerService          *service.PlayerService
 	FriendService          *service.FriendService
+	NotificationService    service.NotificationService
 	RankingService         *service.RankingService
 	UserEquipService       *service.UserEquipService
 	ExperienceService      *service.ExperienceService
@@ -107,10 +108,12 @@ func (c *Container) initializeServices() error {
 		c.CacheService,
 	)
 	
+	// Note: NotificationService will be initialized later with the WebSocket hub
 	c.FriendService = service.NewFriendService(
 		c.FriendRepo,
 		c.UserRepo,
 		c.PlayerRepo,
+		nil, // Will be set later when we have the WebSocket hub
 	)
 	
 	c.RankingService = service.NewRankingService(
@@ -171,6 +174,19 @@ func (c *Container) GetWebSocketServices() *websocket.ServiceContainer {
 		UserSourceStoneService: c.UserSourceStoneService,
 		KillCountService:      c.KillCountService,
 	}
+}
+
+// SetNotificationService sets the notification service after WebSocket hub is available
+func (c *Container) SetNotificationService(userNotifier service.UserNotifier) {
+	c.NotificationService = service.NewNotificationService(userNotifier)
+	
+	// Recreate FriendService with notification support
+	c.FriendService = service.NewFriendService(
+		c.FriendRepo,
+		c.UserRepo,
+		c.PlayerRepo,
+		c.NotificationService,
+	)
 }
 
 // Close cleans up resources

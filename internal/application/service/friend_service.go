@@ -8,9 +8,10 @@ import (
 
 // FriendService handles friend-related business logic
 type FriendService struct {
-	friendRepo repository.FriendRepository
-	userRepo   repository.UserRepository
-	playerRepo repository.PlayerRepository
+	friendRepo         repository.FriendRepository
+	userRepo           repository.UserRepository
+	playerRepo         repository.PlayerRepository
+	notificationService NotificationService
 }
 
 // NewFriendService creates a new friend service
@@ -18,11 +19,13 @@ func NewFriendService(
 	friendRepo repository.FriendRepository,
 	userRepo repository.UserRepository,
 	playerRepo repository.PlayerRepository,
+	notificationService NotificationService,
 ) *FriendService {
 	return &FriendService{
-		friendRepo: friendRepo,
-		userRepo:   userRepo,
-		playerRepo: playerRepo,
+		friendRepo:         friendRepo,
+		userRepo:           userRepo,
+		playerRepo:         playerRepo,
+		notificationService: notificationService,
 	}
 }
 
@@ -150,7 +153,42 @@ func (s *FriendService) SendFriendRequest(fromUserID int, req *dto.AddFriendRequ
 		Status:     "pending",
 	}
 
-	return s.friendRepo.CreateFriendRequest(friendRequest)
+	err = s.friendRepo.CreateFriendRequest(friendRequest)
+	if err != nil {
+		return err
+	}
+
+	// Send real-time notification to the target user if they are online
+	if s.notificationService != nil {
+		// Get requester's player info for level
+		requesterPlayer, err := s.playerRepo.GetByUserID(fromUserID)
+		requesterLevel := 1 // Default level
+		if err == nil && requesterPlayer != nil {
+			requesterLevel = requesterPlayer.Level
+		}
+
+		notification := &dto.FriendRequestNotification{
+			FromUserID:     fromUserID,
+			FromUsername:   fromUser.Username,
+			RequesterLevel: requesterLevel,
+			Message:        req.Message,
+			RequestID:      friendRequest.ID,
+		}
+
+		// Send notification (ignore errors - user might be offline)
+		notifyErr := s.notificationService.SendFriendRequestNotification(req.ToUserID, notification)
+		if notifyErr != nil {
+			// Log error but don't fail the friend request creation
+			// You can add proper logging here
+			println("Failed to send friend request notification:", notifyErr.Error())
+		} else {
+			println("Friend request notification sent successfully to user:", req.ToUserID)
+		}
+	} else {
+		println("NotificationService is nil - cannot send notification")
+	}
+
+	return nil
 }
 
 // AcceptFriendRequest accepts a friend request

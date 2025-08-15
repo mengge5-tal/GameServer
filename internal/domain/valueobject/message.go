@@ -65,6 +65,9 @@ const (
 	ActionFriendRequest    MessageAction = "friendRequest"
 	ActionFriendResponse   MessageAction = "friendResponse"
 	ActionGetRecommendedFriends MessageAction = "getRecommendedFriends"
+	
+	// Friend notification (server-sent)
+	ActionFriendRequestNotification MessageAction = "friendRequestNotification"
 
 	// Rank actions
 	ActionGetAllRank MessageAction = "getAllRank"

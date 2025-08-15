@@ -63,6 +63,12 @@ func NewHub(services *ServiceContainer) *Hub {
 	return hub
 }
 
+// UpdateServices updates the services and recreates the router
+func (h *Hub) UpdateServices(services *ServiceContainer) {
+	h.Services = services
+	h.Router = NewMessageRouter(services)
+}
+
 // Run starts the hub's main loop
 func (h *Hub) Run() {
 	for {
@@ -168,15 +174,29 @@ func (h *Hub) RemoveUserClient(userID int) {
 
 // SendToUser sends a message to a specific user
 func (h *Hub) SendToUser(userID int, message []byte) bool {
+	println("SendToUser called for userID:", userID)
+	
 	client := h.GetClientByUserID(userID)
 	if client == nil {
+		println("No client found for userID:", userID)
+		// Debug: print all connected users
+		h.Mutex.RLock()
+		println("Connected users:")
+		for uid := range h.UserClients {
+			println("  - UserID:", uid)
+		}
+		h.Mutex.RUnlock()
 		return false
 	}
 
+	println("Found client for userID:", userID, "- attempting to send message")
+
 	select {
 	case client.Send <- message:
+		println("Message sent successfully to userID:", userID)
 		return true
 	default:
+		println("Failed to send message to userID:", userID, "- channel might be full")
 		return false
 	}
 }
