@@ -26,7 +26,7 @@ type AddUserSourceStoneRequest struct {
 
 // UpdateUserSourceStoneRequest represents update user source stone request
 type UpdateUserSourceStoneRequest struct {
-	ID               int `json:"id"`
+	SourceStoneID    int `json:"sourcestoneid"`
 	SourceStoneCount int `json:"sourcestonecount"`
 }
 

@@ -634,7 +634,7 @@ func (h *UserSourceStoneHandler) handleUpdateUserSourceStone(client *Client, mes
 		return valueobject.NewErrorResponseWithUniqueID(message.Type, message.Action, valueobject.CodeInvalidRequest, "Invalid update user source stone data")
 	}
 
-	userSourceStone, err := h.userSourceStoneService.UpdateUserSourceStone(&req)
+	userSourceStone, err := h.userSourceStoneService.UpdateUserSourceStone(client.UserID, &req)
 	if err != nil {
 		return valueobject.NewErrorResponseWithUniqueID(message.Type, message.Action, valueobject.CodeValidationError, err.Error())
 	}
@@ -665,10 +665,8 @@ func (h *UserSourceStoneHandler) handleCheckUserSourceStone(client *Client, mess
 		return valueobject.NewErrorResponseWithUniqueID(message.Type, message.Action, valueobject.CodeInvalidRequest, "Invalid check user source stone data")
 	}
 
-	// If no user ID provided, use client's user ID
-	if req.UserID <= 0 {
-		req.UserID = client.GetUserID()
-	}
+	// Use client's user ID
+	req.UserID = client.GetUserID()
 
 	result, err := h.userSourceStoneService.CheckUserSourceStone(&req)
 	if err != nil {

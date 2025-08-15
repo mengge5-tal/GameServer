@@ -161,16 +161,19 @@ func (s *UserSourceStoneService) AddUserSourceStone(req *dto.AddUserSourceStoneR
 }
 
 // UpdateUserSourceStone updates user source stone count
-func (s *UserSourceStoneService) UpdateUserSourceStone(req *dto.UpdateUserSourceStoneRequest) (*dto.UserSourceStoneResponse, error) {
-	if req.ID <= 0 {
-		return nil, entity.NewDomainError("ID must be positive")
+func (s *UserSourceStoneService) UpdateUserSourceStone(userID int, req *dto.UpdateUserSourceStoneRequest) (*dto.UserSourceStoneResponse, error) {
+	if userID <= 0 {
+		return nil, entity.NewDomainError("user ID must be positive")
+	}
+	if req.SourceStoneID <= 0 {
+		return nil, entity.NewDomainError("source stone ID must be positive")
 	}
 	if req.SourceStoneCount < 0 {
 		return nil, entity.NewDomainError("source stone count cannot be negative")
 	}
 
 	// Get existing user source stone
-	userSourceStone, err := s.userSourceStoneRepo.GetByID(req.ID)
+	userSourceStone, err := s.userSourceStoneRepo.GetByUserAndSourceStone(userID, req.SourceStoneID)
 	if err != nil {
 		return nil, err
 	}
@@ -180,7 +183,7 @@ func (s *UserSourceStoneService) UpdateUserSourceStone(req *dto.UpdateUserSource
 
 	// If count is 0, delete the record
 	if req.SourceStoneCount == 0 {
-		if err := s.userSourceStoneRepo.Delete(req.ID); err != nil {
+		if err := s.userSourceStoneRepo.DeleteByUserAndSourceStone(userID, req.SourceStoneID); err != nil {
 			return nil, err
 		}
 		return &dto.UserSourceStoneResponse{

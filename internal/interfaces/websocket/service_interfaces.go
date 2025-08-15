@@ -87,7 +87,7 @@ type SourceStoneServiceInterface interface {
 type UserSourceStoneServiceInterface interface {
 	GetUserSourceStones(userID int, withDetails bool) (interface{}, error)
 	AddUserSourceStone(req *dto.AddUserSourceStoneRequest) (*dto.UserSourceStoneResponse, error)
-	UpdateUserSourceStone(req *dto.UpdateUserSourceStoneRequest) (*dto.UserSourceStoneResponse, error)
+	UpdateUserSourceStone(userID int, req *dto.UpdateUserSourceStoneRequest) (*dto.UserSourceStoneResponse, error)
 	RemoveUserSourceStone(req *dto.RemoveUserSourceStoneRequest) error
 	RemoveUserSourceStoneByID(id int) error
 	CheckUserSourceStone(req *dto.CheckUserSourceStoneRequest) (*dto.CheckUserSourceStoneResponse, error)
