@@ -175,3 +175,10 @@ func (e *DomainError) Error() string {
 func NewDomainError(message string) *DomainError {
 	return &DomainError{Message: message}
 }
+
+// UserWithLevel represents a user with level information for recommendations
+type UserWithLevel struct {
+	UserID   int    `json:"userid"`
+	Username string `json:"username"`
+	Level    int    `json:"level"`
+}

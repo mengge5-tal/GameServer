@@ -227,6 +227,8 @@ func (h *FriendHandler) Handle(client *Client, message *valueobject.Message) *va
 		return h.handleFriendRequest(client, message)
 	case valueobject.ActionFriendResponse:
 		return h.handleFriendResponse(client, message)
+	case valueobject.ActionGetRecommendedFriends:
+		return h.handleGetRecommendedFriends(client, message)
 	default:
 		return valueobject.NewErrorResponseWithUniqueID(message.Type, message.Action, valueobject.CodeInvalidRequest, "Unknown friend action")
 	}
@@ -331,6 +333,14 @@ func (h *FriendHandler) handleFriendResponse(client *Client, message *valueobjec
 		}
 		return valueobject.NewSuccessResponseWithUniqueID(message.Type, message.Action, map[string]string{"message": "Friend request rejected"})
 	}
+}
+
+func (h *FriendHandler) handleGetRecommendedFriends(client *Client, message *valueobject.Message) *valueobject.Response {
+	recommendations, err := h.friendService.GetRecommendedFriends(client.GetUserID())
+	if err != nil {
+		return valueobject.NewErrorResponseWithUniqueID(message.Type, message.Action, valueobject.CodeInternalError, err.Error())
+	}
+	return valueobject.NewSuccessResponseWithUniqueID(message.Type, message.Action, recommendations)
 }
 
 // SourceStoneHandler handles source stone messages

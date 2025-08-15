@@ -301,3 +301,112 @@ func (s *FriendService) RejectFriendRequestByUserID(toUserID, fromUserID int) er
 	// RejectFriendRequest will now delete the request after processing
 	return s.friendRepo.RejectFriendRequest(requestID)
 }
+
+// GetRecommendedFriends retrieves recommended friends for a user
+func (s *FriendService) GetRecommendedFriends(userID int) ([]*dto.RecommendedFriendResponse, error) {
+	// Get user's current level
+	currentUser, err := s.playerRepo.GetByUserID(userID)
+	if err != nil {
+		return nil, err
+	}
+	
+	userLevel := 1
+	if currentUser != nil {
+		userLevel = currentUser.Level
+	}
+	
+	const maxRecommendations = 6
+	var recommendations []*entity.UserWithLevel
+	
+	// Strategy 1: Level difference within 5, online users
+	if len(recommendations) < maxRecommendations {
+		candidates, err := s.friendRepo.GetRecommendedFriends(userID, userLevel, 5, maxRecommendations, true)
+		if err == nil {
+			recommendations = append(recommendations, candidates...)
+		}
+	}
+	
+	// Strategy 2: Level difference within 10, online users
+	if len(recommendations) < maxRecommendations {
+		needed := maxRecommendations - len(recommendations)
+		candidates, err := s.friendRepo.GetRecommendedFriends(userID, userLevel, 10, needed, true)
+		if err == nil {
+			// Filter out already recommended users
+			for _, candidate := range candidates {
+				alreadyRecommended := false
+				for _, existing := range recommendations {
+					if existing.UserID == candidate.UserID {
+						alreadyRecommended = true
+						break
+					}
+				}
+				if !alreadyRecommended {
+					recommendations = append(recommendations, candidate)
+					if len(recommendations) >= maxRecommendations {
+						break
+					}
+				}
+			}
+		}
+	}
+	
+	// Strategy 3: All online users (no level restriction)
+	if len(recommendations) < maxRecommendations {
+		needed := maxRecommendations - len(recommendations)
+		candidates, err := s.friendRepo.GetRecommendedFriends(userID, userLevel, 0, needed, true)
+		if err == nil {
+			// Filter out already recommended users
+			for _, candidate := range candidates {
+				alreadyRecommended := false
+				for _, existing := range recommendations {
+					if existing.UserID == candidate.UserID {
+						alreadyRecommended = true
+						break
+					}
+				}
+				if !alreadyRecommended {
+					recommendations = append(recommendations, candidate)
+					if len(recommendations) >= maxRecommendations {
+						break
+					}
+				}
+			}
+		}
+	}
+	
+	// Strategy 4: All users (no restrictions)
+	if len(recommendations) < maxRecommendations {
+		needed := maxRecommendations - len(recommendations)
+		candidates, err := s.friendRepo.GetRecommendedFriends(userID, userLevel, 0, needed, false)
+		if err == nil {
+			// Filter out already recommended users
+			for _, candidate := range candidates {
+				alreadyRecommended := false
+				for _, existing := range recommendations {
+					if existing.UserID == candidate.UserID {
+						alreadyRecommended = true
+						break
+					}
+				}
+				if !alreadyRecommended {
+					recommendations = append(recommendations, candidate)
+					if len(recommendations) >= maxRecommendations {
+						break
+					}
+				}
+			}
+		}
+	}
+	
+	// Convert to response DTOs
+	var response []*dto.RecommendedFriendResponse
+	for _, user := range recommendations {
+		response = append(response, &dto.RecommendedFriendResponse{
+			UserID:   user.UserID,
+			Username: user.Username,
+			Level:    user.Level,
+		})
+	}
+	
+	return response, nil
+}

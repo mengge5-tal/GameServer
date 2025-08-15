@@ -33,6 +33,7 @@ type FriendServiceInterface interface {
 	GetFriendRanking(userID int) ([]*dto.FriendRankResponse, error)
 	AcceptFriendRequestByUserID(toUserID, fromUserID int) error
 	RejectFriendRequestByUserID(toUserID, fromUserID int) error
+	GetRecommendedFriends(userID int) ([]*dto.RecommendedFriendResponse, error)
 }
 
 // RankingServiceInterface defines the interface for ranking service used by websocket handlers

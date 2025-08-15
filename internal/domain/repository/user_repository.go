@@ -40,6 +40,7 @@ type FriendRepository interface {
 	RemoveFriend(fromUserID, toUserID int) error
 	AreFriends(userID1, userID2 int) (bool, error)
 	HasPendingRequest(fromUserID, toUserID int) (bool, error)
+	GetRecommendedFriends(userID, userLevel, levelDiff, limit int, onlineOnly bool) ([]*entity.UserWithLevel, error)
 }
 
 // RankingRepository defines the interface for ranking data access

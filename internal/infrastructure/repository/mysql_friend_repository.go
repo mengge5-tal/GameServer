@@ -160,3 +160,65 @@ func (r *mysqlFriendRepository) HasPendingRequest(fromUserID, toUserID int) (boo
 	}
 	return count > 0, nil
 }
+
+// GetRecommendedFriends retrieves recommended friends for a user
+func (r *mysqlFriendRepository) GetRecommendedFriends(userID, userLevel, levelDiff, limit int, onlineOnly bool) ([]*entity.UserWithLevel, error) {
+	var query string
+	var args []interface{}
+	
+	// Base query to exclude current user, existing friends, and pending requests
+	baseQuery := `
+		SELECT DISTINCT u.userid, u.username, COALESCE(p.level, 1) as level
+		FROM user u
+		LEFT JOIN playerinfo p ON u.userid = p.userid
+		WHERE u.userid != ?
+		AND u.userid NOT IN (
+			SELECT CASE 
+				WHEN fromuserid = ? THEN touserid 
+				ELSE fromuserid 
+			END as friend_id
+			FROM friend 
+			WHERE (fromuserid = ? OR touserid = ?) AND status = 'accepted'
+		)
+		AND u.userid NOT IN (
+			SELECT fromuserid FROM friend_request WHERE touserid = ? AND status = 'pending'
+		)
+		AND u.userid NOT IN (
+			SELECT touserid FROM friend_request WHERE fromuserid = ? AND status = 'pending'
+		)`
+	
+	args = append(args, userID, userID, userID, userID, userID, userID)
+	
+	// Add online filter if needed
+	if onlineOnly {
+		baseQuery += " AND u.online_status = 1"
+	}
+	
+	// Add level filter if specified
+	if levelDiff > 0 {
+		baseQuery += " AND ABS(COALESCE(p.level, 1) - ?) <= ?"
+		args = append(args, userLevel, levelDiff)
+	}
+	
+	// Add ordering and limit
+	query = baseQuery + " ORDER BY RAND() LIMIT ?"
+	args = append(args, limit)
+	
+	rows, err := r.db.Query(query, args...)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	
+	var users []*entity.UserWithLevel
+	for rows.Next() {
+		user := &entity.UserWithLevel{}
+		err := rows.Scan(&user.UserID, &user.Username, &user.Level)
+		if err != nil {
+			return nil, err
+		}
+		users = append(users, user)
+	}
+	
+	return users, rows.Err()
+}

@@ -58,3 +58,10 @@ type FriendRankResponse struct {
 	Experience   int    `json:"experience"`
 	RankPosition int    `json:"rank_position"`
 }
+
+// RecommendedFriendResponse represents recommended friend response
+type RecommendedFriendResponse struct {
+	UserID   int    `json:"userid"`
+	Username string `json:"name"`
+	Level    int    `json:"level"`
+}

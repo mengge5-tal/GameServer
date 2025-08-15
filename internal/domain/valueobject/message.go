@@ -63,6 +63,7 @@ const (
 	ActionGetFriendRank    MessageAction = "getFriendRank"
 	ActionFriendRequest    MessageAction = "friendRequest"
 	ActionFriendResponse   MessageAction = "friendResponse"
+	ActionGetRecommendedFriends MessageAction = "getRecommendedFriends"
 
 	// Rank actions
 	ActionGetAllRank MessageAction = "getAllRank"
