@@ -23,6 +23,7 @@ const (
 	MessageTypeUserWeapon      MessageType = "userweapon"
 	MessageTypeSourceStone     MessageType = "sourcestone"
 	MessageTypeUserSourceStone MessageType = "usersourcestone"
+	MessageTypeKillCount       MessageType = "killcount"
 )
 
 // MessageAction represents different actions within message types
@@ -99,6 +100,14 @@ const (
 	ActionUpdateUserSourceStone  MessageAction = "updateUserSourceStone"
 	ActionRemoveUserSourceStone  MessageAction = "removeUserSourceStone"
 	ActionCheckUserSourceStone   MessageAction = "checkUserSourceStone"
+
+	// Kill Count actions
+	ActionGetKillCount            MessageAction = "getKillCount"
+	ActionGetTodayKillCount       MessageAction = "getTodayKillCount"
+	ActionUpdateKillCount         MessageAction = "updateKillCount"
+	ActionIncrementKillCount      MessageAction = "incrementKillCount"
+	ActionBatchIncrementKillCount MessageAction = "batchIncrementKillCount"
+	ActionDeleteKillCount         MessageAction = "deleteKillCount"
 )
 
 // Message represents a WebSocket message

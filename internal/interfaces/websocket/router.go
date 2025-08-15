@@ -136,6 +136,14 @@ func (r *messageRouter) registerHandlers() {
 	r.register(valueobject.MessageTypeUserSourceStone, valueobject.ActionUpdateUserSourceStone, NewUserSourceStoneHandler(r.services.UserSourceStoneService))
 	r.register(valueobject.MessageTypeUserSourceStone, valueobject.ActionRemoveUserSourceStone, NewUserSourceStoneHandler(r.services.UserSourceStoneService))
 	r.register(valueobject.MessageTypeUserSourceStone, valueobject.ActionCheckUserSourceStone, NewUserSourceStoneHandler(r.services.UserSourceStoneService))
+
+	// Kill Count handlers
+	r.register(valueobject.MessageTypeKillCount, valueobject.ActionGetKillCount, NewKillCountHandler(r.services.KillCountService))
+	r.register(valueobject.MessageTypeKillCount, valueobject.ActionGetTodayKillCount, NewKillCountHandler(r.services.KillCountService))
+	r.register(valueobject.MessageTypeKillCount, valueobject.ActionUpdateKillCount, NewKillCountHandler(r.services.KillCountService))
+	r.register(valueobject.MessageTypeKillCount, valueobject.ActionIncrementKillCount, NewKillCountHandler(r.services.KillCountService))
+	r.register(valueobject.MessageTypeKillCount, valueobject.ActionBatchIncrementKillCount, NewKillCountHandler(r.services.KillCountService))
+	r.register(valueobject.MessageTypeKillCount, valueobject.ActionDeleteKillCount, NewKillCountHandler(r.services.KillCountService))
 }
 
 // register registers a handler for a message type and action

@@ -28,6 +28,7 @@ type Container struct {
 	UserWeaponService      *service.UserWeaponService
 	SourceStoneService     *service.SourceStoneService
 	UserSourceStoneService *service.UserSourceStoneService
+	KillCountService       *service.KillCountService
 	
 	// Repositories
 	UserRepo              repository.UserRepository
@@ -41,6 +42,7 @@ type Container struct {
 	WeaponRepo            repository.WeaponRepository
 	UserWeaponRepo        repository.UserWeaponRepository
 	UserSourceStoneRepo   repository.UserSourceStoneRepository
+	KillCountRepo         repository.KillCountRepository
 	
 	// Domain Services
 	AuthDomainService domainService.AuthDomainService
@@ -78,6 +80,7 @@ func (c *Container) initializeRepositories() error {
 	c.WeaponRepo = infraRepo.NewMySQLWeaponRepository(c.Database)
 	c.UserWeaponRepo = infraRepo.NewMySQLUserWeaponRepository(c.Database)
 	c.UserSourceStoneRepo = infraRepo.NewMySQLUserSourceStoneRepository(c.Database)
+	c.KillCountRepo = infraRepo.NewMySQLKillCountRepository(c.Database)
 	
 	return nil
 }
@@ -146,6 +149,10 @@ func (c *Container) initializeServices() error {
 		c.UserRepo,
 	)
 	
+	c.KillCountService = service.NewKillCountService(
+		c.KillCountRepo,
+	)
+	
 	return nil
 }
 
@@ -162,6 +169,7 @@ func (c *Container) GetWebSocketServices() *websocket.ServiceContainer {
 		UserWeaponService:     c.UserWeaponService,
 		SourceStoneService:    c.SourceStoneService,
 		UserSourceStoneService: c.UserSourceStoneService,
+		KillCountService:      c.KillCountService,
 	}
 }
 

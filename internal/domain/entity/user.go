@@ -182,3 +182,13 @@ type UserWithLevel struct {
 	Username string `json:"username"`
 	Level    int    `json:"level"`
 }
+
+// KillCount represents daily kill count statistics for a user
+type KillCount struct {
+	ID     int    `json:"id"`
+	UserID int    `json:"userid"`
+	Today  string `json:"today"` // Date in YYYY-MM-DD format
+	Normal int    `json:"normal"`
+	Elite  int    `json:"elite"`
+	Boss   int    `json:"boss"`
+}

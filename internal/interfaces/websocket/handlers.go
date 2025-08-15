@@ -390,6 +390,138 @@ func (h *SourceStoneHandler) handleGetAllSourceStones(client *Client, message *v
 	return valueobject.NewSuccessResponseWithUniqueID(message.Type, message.Action, sourceStones)
 }
 
+// KillCountHandler handles kill count messages
+type KillCountHandler struct {
+	killCountService KillCountServiceInterface
+}
+
+// NewKillCountHandler creates a new kill count handler
+func NewKillCountHandler(killCountService KillCountServiceInterface) *KillCountHandler {
+	return &KillCountHandler{killCountService: killCountService}
+}
+
+// Handle handles kill count messages
+func (h *KillCountHandler) Handle(client *Client, message *valueobject.Message) *valueobject.Response {
+	switch message.Action {
+	case valueobject.ActionGetKillCount:
+		return h.handleGetKillCount(client, message)
+	case valueobject.ActionGetTodayKillCount:
+		return h.handleGetTodayKillCount(client, message)
+	case valueobject.ActionUpdateKillCount:
+		return h.handleUpdateKillCount(client, message)
+	case valueobject.ActionIncrementKillCount:
+		return h.handleIncrementKillCount(client, message)
+	case valueobject.ActionBatchIncrementKillCount:
+		return h.handleBatchIncrementKillCount(client, message)
+	case valueobject.ActionDeleteKillCount:
+		return h.handleDeleteKillCount(client, message)
+	default:
+		return valueobject.NewErrorResponseWithUniqueID(message.Type, message.Action, valueobject.CodeInvalidRequest, "Unknown kill count action")
+	}
+}
+
+func (h *KillCountHandler) handleGetKillCount(client *Client, message *valueobject.Message) *valueobject.Response {
+	var req dto.GetKillCountRequest
+	if err := json.Unmarshal(message.Data, &req); err != nil {
+		return valueobject.NewErrorResponseWithUniqueID(message.Type, message.Action, valueobject.CodeInvalidRequest, "Invalid get kill count data")
+	}
+
+	// If no user ID provided, use client's user ID
+	if req.UserID <= 0 {
+		req.UserID = client.GetUserID()
+	}
+
+	killCount, err := h.killCountService.GetKillCount(&req)
+	if err != nil {
+		return valueobject.NewErrorResponseWithUniqueID(message.Type, message.Action, valueobject.CodeInternalError, err.Error())
+	}
+
+	return valueobject.NewSuccessResponseWithUniqueID(message.Type, message.Action, killCount)
+}
+
+func (h *KillCountHandler) handleGetTodayKillCount(client *Client, message *valueobject.Message) *valueobject.Response {
+	killCount, err := h.killCountService.GetTodayKillCount(client.GetUserID())
+	if err != nil {
+		return valueobject.NewErrorResponseWithUniqueID(message.Type, message.Action, valueobject.CodeInternalError, err.Error())
+	}
+
+	return valueobject.NewSuccessResponseWithUniqueID(message.Type, message.Action, killCount)
+}
+
+func (h *KillCountHandler) handleUpdateKillCount(client *Client, message *valueobject.Message) *valueobject.Response {
+	var req dto.UpdateKillCountRequest
+	if err := json.Unmarshal(message.Data, &req); err != nil {
+		return valueobject.NewErrorResponseWithUniqueID(message.Type, message.Action, valueobject.CodeInvalidRequest, "Invalid update kill count data")
+	}
+
+	if req.Normal < 0 || req.Elite < 0 || req.Boss < 0 {
+		return valueobject.NewErrorResponseWithUniqueID(message.Type, message.Action, valueobject.CodeInvalidRequest, "Kill counts cannot be negative")
+	}
+
+	killCount, err := h.killCountService.UpdateKillCount(client.GetUserID(), &req)
+	if err != nil {
+		return valueobject.NewErrorResponseWithUniqueID(message.Type, message.Action, valueobject.CodeInternalError, err.Error())
+	}
+
+	return valueobject.NewSuccessResponseWithUniqueID(message.Type, message.Action, killCount)
+}
+
+func (h *KillCountHandler) handleIncrementKillCount(client *Client, message *valueobject.Message) *valueobject.Response {
+	var req dto.IncrementKillCountRequest
+	if err := json.Unmarshal(message.Data, &req); err != nil {
+		return valueobject.NewErrorResponseWithUniqueID(message.Type, message.Action, valueobject.CodeInvalidRequest, "Invalid increment kill count data")
+	}
+
+	if req.MonsterType == "" {
+		return valueobject.NewErrorResponseWithUniqueID(message.Type, message.Action, valueobject.CodeInvalidRequest, "Monster type is required")
+	}
+
+	if req.Count <= 0 {
+		req.Count = 1 // Default to 1 if not specified or invalid
+	}
+
+	killCount, err := h.killCountService.IncrementKillCount(client.GetUserID(), &req)
+	if err != nil {
+		return valueobject.NewErrorResponseWithUniqueID(message.Type, message.Action, valueobject.CodeInternalError, err.Error())
+	}
+
+	return valueobject.NewSuccessResponseWithUniqueID(message.Type, message.Action, killCount)
+}
+
+func (h *KillCountHandler) handleBatchIncrementKillCount(client *Client, message *valueobject.Message) *valueobject.Response {
+	var req dto.BatchIncrementKillCountRequest
+	if err := json.Unmarshal(message.Data, &req); err != nil {
+		return valueobject.NewErrorResponseWithUniqueID(message.Type, message.Action, valueobject.CodeInvalidRequest, "Invalid batch increment kill count data")
+	}
+
+	killCount, err := h.killCountService.BatchIncrementKillCount(client.GetUserID(), &req)
+	if err != nil {
+		return valueobject.NewErrorResponseWithUniqueID(message.Type, message.Action, valueobject.CodeInternalError, err.Error())
+	}
+
+	return valueobject.NewSuccessResponseWithUniqueID(message.Type, message.Action, killCount)
+}
+
+func (h *KillCountHandler) handleDeleteKillCount(client *Client, message *valueobject.Message) *valueobject.Response {
+	var req struct {
+		ID int `json:"id"`
+	}
+	if err := json.Unmarshal(message.Data, &req); err != nil {
+		return valueobject.NewErrorResponseWithUniqueID(message.Type, message.Action, valueobject.CodeInvalidRequest, "Invalid delete kill count data")
+	}
+
+	if req.ID <= 0 {
+		return valueobject.NewErrorResponseWithUniqueID(message.Type, message.Action, valueobject.CodeInvalidRequest, "Valid kill count ID is required")
+	}
+
+	err := h.killCountService.DeleteKillCount(req.ID)
+	if err != nil {
+		return valueobject.NewErrorResponseWithUniqueID(message.Type, message.Action, valueobject.CodeInternalError, err.Error())
+	}
+
+	return valueobject.NewSuccessResponseWithUniqueID(message.Type, message.Action, map[string]string{"message": "Kill count deleted successfully"})
+}
+
 // UserSourceStoneHandler handles user source stone messages
 type UserSourceStoneHandler struct {
 	userSourceStoneService UserSourceStoneServiceInterface

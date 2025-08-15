@@ -92,3 +92,14 @@ type UserSourceStoneServiceInterface interface {
 	RemoveUserSourceStoneByID(id int) error
 	CheckUserSourceStone(req *dto.CheckUserSourceStoneRequest) (*dto.CheckUserSourceStoneResponse, error)
 }
+
+// KillCountServiceInterface defines the interface for kill count service used by websocket handlers
+type KillCountServiceInterface interface {
+	GetKillCount(req *dto.GetKillCountRequest) (*dto.KillCountResponse, error)
+	GetTodayKillCount(userID int) (*dto.KillCountResponse, error)
+	UpdateKillCount(userID int, req *dto.UpdateKillCountRequest) (*dto.KillCountResponse, error)
+	IncrementKillCount(userID int, req *dto.IncrementKillCountRequest) (*dto.KillCountResponse, error)
+	BatchIncrementKillCount(userID int, req *dto.BatchIncrementKillCountRequest) (*dto.KillCountResponse, error)
+	DeleteKillCount(id int) error
+	ResetAllKillCounts() error
+}

@@ -13,6 +13,7 @@ import (
 	"GameServer/internal/infrastructure/config"
 	"GameServer/internal/infrastructure/container"
 	"GameServer/internal/infrastructure/database"
+	"GameServer/internal/infrastructure/scheduler"
 	"GameServer/internal/interfaces/websocket"
 	"GameServer/pkg/logger"
 	"GameServer/pkg/metrics"
@@ -72,6 +73,10 @@ func main() {
 
 	logger.Info("Dependency injection container initialized")
 
+	// Initialize and start daily reset scheduler
+	resetScheduler := scheduler.NewDailyResetScheduler(container.KillCountService)
+	resetScheduler.Start()
+
 	// Create WebSocket hub
 	hub := websocket.NewHub(container.GetWebSocketServices())
 	go hub.Run()
@@ -94,7 +99,7 @@ func main() {
 	}()
 
 	// Wait for shutdown signal
-	waitForShutdown(hub, dbConnection)
+	waitForShutdown(hub, dbConnection, resetScheduler)
 	log.Println("Server shutdown completed")
 }
 
@@ -159,12 +164,18 @@ func setupRoutes(hub *websocket.Hub, container *container.Container, cfg *config
 }
 
 // waitForShutdown waits for interrupt signals for graceful shutdown
-func waitForShutdown(hub *websocket.Hub, dbConnection *database.Connection) {
+func waitForShutdown(hub *websocket.Hub, dbConnection *database.Connection, resetScheduler *scheduler.DailyResetScheduler) {
 	c := make(chan os.Signal, 1)
 	signal.Notify(c, os.Interrupt, syscall.SIGTERM)
 	<-c
 	
 	log.Println("Shutdown signal received, starting graceful shutdown...")
+	
+	// Stop daily reset scheduler
+	if resetScheduler != nil {
+		log.Println("Stopping daily reset scheduler...")
+		resetScheduler.Stop()
+	}
 	
 	// Close WebSocket hub to disconnect all clients and set users offline
 	if hub != nil {

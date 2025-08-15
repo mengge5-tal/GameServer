@@ -104,3 +104,14 @@ type UserSourceStoneRepository interface {
 	DeleteByUserAndSourceStone(userID, sourcestoneID int) error
 	UserOwnsSourceStone(userID, sourcestoneID int) (bool, error)
 }
+
+// KillCountRepository defines the interface for kill count data access
+type KillCountRepository interface {
+	GetByUserIDAndDate(userID int, date string) (*entity.KillCount, error)
+	Create(killCount *entity.KillCount) error
+	Update(killCount *entity.KillCount) error
+	Delete(id int) error
+	IncrementKill(userID int, date string, monsterType string, count int) error
+	ResetAllToday() error
+	GetTodayKillCount(userID int) (*entity.KillCount, error)
+}
