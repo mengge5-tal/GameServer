@@ -143,6 +143,8 @@ func (r *messageRouter) registerHandlers() {
 	r.register(valueobject.MessageTypeKillCount, valueobject.ActionUpdateKillCount, NewKillCountHandler(r.services.KillCountService))
 	r.register(valueobject.MessageTypeKillCount, valueobject.ActionIncrementKillCount, NewKillCountHandler(r.services.KillCountService))
 	r.register(valueobject.MessageTypeKillCount, valueobject.ActionBatchIncrementKillCount, NewKillCountHandler(r.services.KillCountService))
+	r.register(valueobject.MessageTypeKillCount, valueobject.ActionGetKillRanking, NewKillCountHandler(r.services.KillCountService))
+	r.register(valueobject.MessageTypeKillCount, valueobject.ActionGetUserKillRank, NewKillCountHandler(r.services.KillCountService))
 	r.register(valueobject.MessageTypeKillCount, valueobject.ActionDeleteKillCount, NewKillCountHandler(r.services.KillCountService))
 }
 

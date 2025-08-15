@@ -191,4 +191,19 @@ type KillCount struct {
 	Normal int    `json:"normal"`
 	Elite  int    `json:"elite"`
 	Boss   int    `json:"boss"`
+	Count  int    `json:"count"` // Total kill count (normal*1 + elite*5 + boss*10)
+}
+
+// CalculateTotalKillCount calculates the total kill count based on kill types
+func (kc *KillCount) CalculateTotalKillCount() {
+	kc.Count = kc.Normal*1 + kc.Elite*5 + kc.Boss*10
+}
+
+// KillRankingEntry represents a kill ranking entry with user information
+type KillRankingEntry struct {
+	UserID   int    `json:"userid"`
+	Username string `json:"username"`
+	Level    int    `json:"level"`
+	Count    int    `json:"count"` // Total kill count
+	Rank     int    `json:"rank"`  // Ranking position
 }

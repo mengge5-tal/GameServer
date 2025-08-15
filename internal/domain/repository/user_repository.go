@@ -114,4 +114,8 @@ type KillCountRepository interface {
 	IncrementKill(userID int, date string, monsterType string, count int) error
 	ResetAllToday() error
 	GetTodayKillCount(userID int) (*entity.KillCount, error)
+	
+	// Ranking methods
+	GetKillRanking(limit int) ([]*entity.KillRankingEntry, error)
+	GetUserKillRank(userID int) (*entity.KillRankingEntry, error)
 }

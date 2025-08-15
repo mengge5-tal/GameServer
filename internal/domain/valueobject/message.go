@@ -108,6 +108,8 @@ const (
 	ActionIncrementKillCount      MessageAction = "incrementKillCount"
 	ActionBatchIncrementKillCount MessageAction = "batchIncrementKillCount"
 	ActionDeleteKillCount         MessageAction = "deleteKillCount"
+	ActionGetKillRanking          MessageAction = "getKillRanking"
+	ActionGetUserKillRank         MessageAction = "getUserKillRank"
 )
 
 // Message represents a WebSocket message

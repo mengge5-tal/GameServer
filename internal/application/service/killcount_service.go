@@ -42,6 +42,7 @@ func (s *KillCountService) GetKillCount(req *dto.GetKillCountRequest) (*dto.Kill
 			Normal: 0,
 			Elite:  0,
 			Boss:   0,
+			Count:  0,
 		}, nil
 	}
 	
@@ -52,6 +53,7 @@ func (s *KillCountService) GetKillCount(req *dto.GetKillCountRequest) (*dto.Kill
 		Normal: killCount.Normal,
 		Elite:  killCount.Elite,
 		Boss:   killCount.Boss,
+		Count:  killCount.Count,
 	}, nil
 }
 
@@ -72,6 +74,7 @@ func (s *KillCountService) GetTodayKillCount(userID int) (*dto.KillCountResponse
 			Normal: 0,
 			Elite:  0,
 			Boss:   0,
+			Count:  0,
 		}, nil
 	}
 	
@@ -82,6 +85,7 @@ func (s *KillCountService) GetTodayKillCount(userID int) (*dto.KillCountResponse
 		Normal: killCount.Normal,
 		Elite:  killCount.Elite,
 		Boss:   killCount.Boss,
+		Count:  killCount.Count,
 	}, nil
 }
 
@@ -117,6 +121,7 @@ func (s *KillCountService) UpdateKillCount(userID int, req *dto.UpdateKillCountR
 			Normal: newRecord.Normal,
 			Elite:  newRecord.Elite,
 			Boss:   newRecord.Boss,
+			Count:  newRecord.Count,
 		}, nil
 	} else {
 		// Update existing record
@@ -136,6 +141,7 @@ func (s *KillCountService) UpdateKillCount(userID int, req *dto.UpdateKillCountR
 			Normal: existing.Normal,
 			Elite:  existing.Elite,
 			Boss:   existing.Boss,
+			Count:  existing.Count,
 		}, nil
 	}
 }
@@ -233,6 +239,7 @@ func (s *KillCountService) BatchIncrementKillCount(userID int, req *dto.BatchInc
 			Normal: newRecord.Normal,
 			Elite:  newRecord.Elite,
 			Boss:   newRecord.Boss,
+			Count:  newRecord.Count,
 		}, nil
 	} else {
 		// Update existing record with increments
@@ -258,6 +265,7 @@ func (s *KillCountService) BatchIncrementKillCount(userID int, req *dto.BatchInc
 			Normal: existing.Normal,
 			Elite:  existing.Elite,
 			Boss:   existing.Boss,
+			Count:  existing.Count,
 		}, nil
 	}
 }
@@ -265,4 +273,51 @@ func (s *KillCountService) BatchIncrementKillCount(userID int, req *dto.BatchInc
 // DeleteKillCount deletes a kill count record by ID
 func (s *KillCountService) DeleteKillCount(id int) error {
 	return s.killCountRepo.Delete(id)
+}
+
+// GetKillRanking retrieves kill count ranking top N players
+func (s *KillCountService) GetKillRanking(req *dto.GetKillRankingRequest) ([]*dto.KillRankingResponse, error) {
+	limit := req.Limit
+	if limit <= 0 {
+		limit = 100 // Default to top 100
+	}
+	
+	entries, err := s.killCountRepo.GetKillRanking(limit)
+	if err != nil {
+		return nil, err
+	}
+	
+	var rankings []*dto.KillRankingResponse
+	for _, entry := range entries {
+		rankings = append(rankings, &dto.KillRankingResponse{
+			UserID:   entry.UserID,
+			Username: entry.Username,
+			Level:    entry.Level,
+			Count:    entry.Count,
+			Rank:     entry.Rank,
+		})
+	}
+	
+	return rankings, nil
+}
+
+// GetUserKillRank retrieves specific user's kill count ranking
+func (s *KillCountService) GetUserKillRank(req *dto.GetUserKillRankRequest) (*dto.UserKillRankResponse, error) {
+	userID := req.UserID
+	if userID <= 0 {
+		return nil, entity.NewDomainError("user ID is required")
+	}
+	
+	entry, err := s.killCountRepo.GetUserKillRank(userID)
+	if err != nil {
+		return nil, err
+	}
+	
+	return &dto.UserKillRankResponse{
+		UserID:   entry.UserID,
+		Username: entry.Username,
+		Level:    entry.Level,
+		Count:    entry.Count,
+		Rank:     entry.Rank,
+	}, nil
 }

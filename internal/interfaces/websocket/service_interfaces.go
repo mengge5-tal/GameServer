@@ -100,6 +100,8 @@ type KillCountServiceInterface interface {
 	UpdateKillCount(userID int, req *dto.UpdateKillCountRequest) (*dto.KillCountResponse, error)
 	IncrementKillCount(userID int, req *dto.IncrementKillCountRequest) (*dto.KillCountResponse, error)
 	BatchIncrementKillCount(userID int, req *dto.BatchIncrementKillCountRequest) (*dto.KillCountResponse, error)
+	GetKillRanking(req *dto.GetKillRankingRequest) ([]*dto.KillRankingResponse, error)
+	GetUserKillRank(req *dto.GetUserKillRankRequest) (*dto.UserKillRankResponse, error)
 	DeleteKillCount(id int) error
 	ResetAllKillCounts() error
 }

@@ -413,6 +413,10 @@ func (h *KillCountHandler) Handle(client *Client, message *valueobject.Message) 
 		return h.handleIncrementKillCount(client, message)
 	case valueobject.ActionBatchIncrementKillCount:
 		return h.handleBatchIncrementKillCount(client, message)
+	case valueobject.ActionGetKillRanking:
+		return h.handleGetKillRanking(client, message)
+	case valueobject.ActionGetUserKillRank:
+		return h.handleGetUserKillRank(client, message)
 	case valueobject.ActionDeleteKillCount:
 		return h.handleDeleteKillCount(client, message)
 	default:
@@ -500,6 +504,39 @@ func (h *KillCountHandler) handleBatchIncrementKillCount(client *Client, message
 	}
 
 	return valueobject.NewSuccessResponseWithUniqueID(message.Type, message.Action, killCount)
+}
+
+func (h *KillCountHandler) handleGetKillRanking(client *Client, message *valueobject.Message) *valueobject.Response {
+	var req dto.GetKillRankingRequest
+	if err := json.Unmarshal(message.Data, &req); err != nil {
+		return valueobject.NewErrorResponseWithUniqueID(message.Type, message.Action, valueobject.CodeInvalidRequest, "Invalid get kill ranking data")
+	}
+
+	rankings, err := h.killCountService.GetKillRanking(&req)
+	if err != nil {
+		return valueobject.NewErrorResponseWithUniqueID(message.Type, message.Action, valueobject.CodeInternalError, err.Error())
+	}
+
+	return valueobject.NewSuccessResponseWithUniqueID(message.Type, message.Action, rankings)
+}
+
+func (h *KillCountHandler) handleGetUserKillRank(client *Client, message *valueobject.Message) *valueobject.Response {
+	var req dto.GetUserKillRankRequest
+	if err := json.Unmarshal(message.Data, &req); err != nil {
+		return valueobject.NewErrorResponseWithUniqueID(message.Type, message.Action, valueobject.CodeInvalidRequest, "Invalid get user kill rank data")
+	}
+
+	// If no user ID provided, use client's user ID
+	if req.UserID <= 0 {
+		req.UserID = client.GetUserID()
+	}
+
+	userRank, err := h.killCountService.GetUserKillRank(&req)
+	if err != nil {
+		return valueobject.NewErrorResponseWithUniqueID(message.Type, message.Action, valueobject.CodeInternalError, err.Error())
+	}
+
+	return valueobject.NewSuccessResponseWithUniqueID(message.Type, message.Action, userRank)
 }
 
 func (h *KillCountHandler) handleDeleteKillCount(client *Client, message *valueobject.Message) *valueobject.Response {
