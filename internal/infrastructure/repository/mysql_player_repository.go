@@ -91,7 +91,7 @@ func (r *mysqlPlayerRepository) GetPlayerRanking(rankType string, limit int) ([]
 		query = `SELECT p.userid, u.username, p.level as value
 				 FROM playerinfo p 
 				 INNER JOIN user u ON p.userid = u.userid
-				 ORDER BY p.level DESC 
+				 ORDER BY p.level DESC, p.experience DESC 
 				 LIMIT ?`
 	case "experience":
 		query = `SELECT p.userid, u.username, p.experience as value
@@ -156,8 +156,10 @@ func (r *mysqlPlayerRepository) GetUserRank(userID int, rankType string) (*entit
 		valueQuery = `SELECT p.level, u.username FROM playerinfo p 
 					  INNER JOIN user u ON p.userid = u.userid 
 					  WHERE p.userid = ?`
-		countQuery = `SELECT COUNT(*) + 1 FROM playerinfo WHERE level > 
-					  (SELECT level FROM playerinfo WHERE userid = ?)`
+		countQuery = `SELECT COUNT(*) + 1 FROM playerinfo p1 
+					  WHERE p1.level > (SELECT level FROM playerinfo WHERE userid = ?)
+					  OR (p1.level = (SELECT level FROM playerinfo WHERE userid = ?) 
+					      AND p1.experience > (SELECT experience FROM playerinfo WHERE userid = ?))`
 	case "experience":
 		valueQuery = `SELECT p.experience, u.username FROM playerinfo p 
 					  INNER JOIN user u ON p.userid = u.userid 
@@ -193,7 +195,13 @@ func (r *mysqlPlayerRepository) GetUserRank(userID int, rankType string) (*entit
 	
 	// Calculate user's position
 	var position int
-	err = r.db.QueryRow(countQuery, userID).Scan(&position)
+	if rankType == "level" {
+		// For level ranking, we need 3 userID parameters for the complex query
+		err = r.db.QueryRow(countQuery, userID, userID, userID).Scan(&position)
+	} else {
+		// For other ranking types, only 1 userID parameter is needed
+		err = r.db.QueryRow(countQuery, userID).Scan(&position)
+	}
 	if err != nil {
 		return nil, err
 	}
