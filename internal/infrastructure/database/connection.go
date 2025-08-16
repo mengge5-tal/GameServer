@@ -1,11 +1,11 @@
 package database
 
 import (
+	"GameServer/internal/infrastructure/config"
 	"database/sql"
 	"fmt"
 	"log"
-	"GameServer/internal/infrastructure/config"
-	
+
 	_ "github.com/go-sql-driver/mysql"
 )
 
@@ -59,7 +59,7 @@ func (c *Connection) Close() error {
 func (c *Connection) CheckTables() error {
 	requiredTables := []string{
 		"user", "playerinfo", "equip", "sourcestone",
-		"friend", "friend_request", "ranking", "experience",
+		"friend", "friend_request", "experience",
 	}
 
 	for _, tableName := range requiredTables {
@@ -98,14 +98,14 @@ func (c *Connection) SetAllUsersOffline() error {
 	if err != nil {
 		return fmt.Errorf("failed to set all users offline: %w", err)
 	}
-	
+
 	rowsAffected, err := result.RowsAffected()
 	if err != nil {
 		log.Printf("Could not get rows affected count: %v", err)
 	} else {
 		log.Printf("Set %d users to offline status", rowsAffected)
 	}
-	
+
 	return nil
 }
 
@@ -116,12 +116,12 @@ func (c *Connection) tableExists(tableName string) (bool, error) {
 		FROM information_schema.tables 
 		WHERE table_schema = ? AND table_name = ?
 	`
-	
+
 	var count int
 	err := c.db.QueryRow(query, c.config.Database.Name, tableName).Scan(&count)
 	if err != nil {
 		return false, err
 	}
-	
+
 	return count > 0, nil
 }

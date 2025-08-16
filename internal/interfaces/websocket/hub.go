@@ -35,17 +35,17 @@ type Hub struct {
 
 // ServiceContainer holds all application services
 type ServiceContainer struct {
-	AuthService           AuthServiceInterface
-	PlayerService         PlayerServiceInterface
-	FriendService         FriendServiceInterface
-	RankingService        RankingServiceInterface
-	UserEquipService      UserEquipServiceInterface
-	ExperienceService     ExperienceServiceInterface
-	WeaponService         WeaponServiceInterface
-	UserWeaponService     UserWeaponServiceInterface
-	SourceStoneService    SourceStoneServiceInterface
+	AuthService            AuthServiceInterface
+	PlayerService          PlayerServiceInterface
+	FriendService          FriendServiceInterface
+	UserEquipService       UserEquipServiceInterface
+	ExperienceService      ExperienceServiceInterface
+	WeaponService          WeaponServiceInterface
+	UserWeaponService      UserWeaponServiceInterface
+	SourceStoneService     SourceStoneServiceInterface
 	UserSourceStoneService UserSourceStoneServiceInterface
-	KillCountService      KillCountServiceInterface
+	KillCountService       KillCountServiceInterface
+	RankingService         RankingServiceInterface
 }
 
 // NewHub creates a new Hub instance
@@ -109,20 +109,20 @@ func (h *Hub) unregisterClient(client *Client) {
 	// Remove from user clients map if authenticated
 	if client.UserID > 0 {
 		delete(h.UserClients, client.UserID)
-		
+
 		// Set user offline status
 		if h.Services.AuthService != nil {
 			if err := h.Services.AuthService.Logout(client.UserID); err != nil {
 				log.Printf("Failed to set user %d offline: %v", client.UserID, err)
 			}
 		}
-		
+
 		log.Printf("User %d disconnected", client.UserID)
 	}
 
 	// Close send channel
 	close(client.Send)
-	
+
 	log.Printf("Client %s disconnected", client.ID)
 }
 
@@ -175,7 +175,7 @@ func (h *Hub) RemoveUserClient(userID int) {
 // SendToUser sends a message to a specific user
 func (h *Hub) SendToUser(userID int, message []byte) bool {
 	println("SendToUser called for userID:", userID)
-	
+
 	client := h.GetClientByUserID(userID)
 	if client == nil {
 		println("No client found for userID:", userID)

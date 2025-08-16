@@ -1,30 +1,36 @@
 package dto
 
-import "time"
-
-// RankingResponse represents ranking response data
-type RankingResponse struct {
-	ID           int       `json:"id"`
-	UserID       int       `json:"userid"`
-	Username     string    `json:"username,omitempty"` // Will be populated by service
-	RankType     string    `json:"rank_type"`
-	RankValue    int       `json:"rank_value"`
-	RankPosition int       `json:"rank_position"`
-	UpdatedAt    time.Time `json:"updated_at"`
+// PlayerRankingRequest represents a request for player ranking
+type PlayerRankingRequest struct {
+	RankType string `json:"rank_type"` // level, experience, gamelevel, bloodenergy
+	Limit    int    `json:"limit"`     // number of results to return
 }
 
-// GetRankingRequest represents get ranking request
-type GetRankingRequest struct {
-	RankType string `json:"rank_type"` // level, experience, equipment_power
-	Limit    int    `json:"limit"`     // Number of top ranks to return
+// GetUserRankRequest represents a request for getting a user's rank
+type GetUserRankRequest struct {
+	UserID   int    `json:"userid,omitempty"` // optional, will use client's user ID if not provided
+	RankType string `json:"rank_type"`        // level, experience, gamelevel, bloodenergy
 }
 
-// UserRankingResponse represents user's specific ranking
-type UserRankingResponse struct {
-	UserID       int       `json:"userid"`
-	Username     string    `json:"username"`
-	RankType     string    `json:"rank_type"`
-	RankValue    int       `json:"rank_value"`
-	RankPosition int       `json:"rank_position"`
-	UpdatedAt    time.Time `json:"updated_at"`
+// PlayerRankingResponse represents a player's ranking information
+type PlayerRankingResponse struct {
+	UserID   int    `json:"userid"`
+	Username string `json:"username,omitempty"`
+	Value    int    `json:"value"`
+	Position int    `json:"position"`
+}
+
+// GetPlayerRankingResponse represents the response for player ranking query
+type GetPlayerRankingResponse struct {
+	RankType string                   `json:"rank_type"`
+	Rankings []*PlayerRankingResponse `json:"rankings"`
+}
+
+// UserRankResponse represents a single user's rank in a specific ranking
+type UserRankResponse struct {
+	UserID   int    `json:"userid"`
+	Username string `json:"username,omitempty"`
+	RankType string `json:"rank_type"`
+	Value    int    `json:"value"`
+	Position int    `json:"position"`
 }

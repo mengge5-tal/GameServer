@@ -28,6 +28,10 @@ type PlayerRepository interface {
 	UpdateExperience(userID, experience int) error
 	UpdateLevel(userID, level int) error
 	UpdateBloodEnergy(userID, bloodEnergy int) error
+	
+	// Ranking methods
+	GetPlayerRanking(rankType string, limit int) ([]*entity.PlayerRankingEntry, error)
+	GetUserRank(userID int, rankType string) (*entity.PlayerRankingEntry, error)
 }
 
 // FriendRepository defines the interface for friend data access
@@ -43,13 +47,6 @@ type FriendRepository interface {
 	GetRecommendedFriends(userID, userLevel, levelDiff, limit int, onlineOnly bool) ([]*entity.UserWithLevel, error)
 }
 
-// RankingRepository defines the interface for ranking data access
-type RankingRepository interface {
-	GetRankingByType(rankType string, limit int) ([]*entity.Ranking, error)
-	UpdateUserRanking(userID int, rankType string, value int) error
-	GetUserRanking(userID int, rankType string) (*entity.Ranking, error)
-	RefreshRankings(rankType string) error
-}
 
 // EquipmentRepository defines the interface for equipment data access
 type EquipmentRepository interface {

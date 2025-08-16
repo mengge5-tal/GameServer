@@ -98,9 +98,6 @@ func (r *messageRouter) registerHandlers() {
 	r.register(valueobject.MessageTypeFriend, valueobject.ActionFriendResponse, NewFriendHandler(r.services.FriendService))
 	r.register(valueobject.MessageTypeFriend, valueobject.ActionGetRecommendedFriends, NewFriendHandler(r.services.FriendService))
 
-	// Ranking handlers
-	r.register(valueobject.MessageTypeRank, valueobject.ActionGetAllRank, NewRankingHandler(r.services.RankingService))
-	r.register(valueobject.MessageTypeRank, valueobject.ActionGetRank, NewRankingHandler(r.services.RankingService))
 
 	// User Equipment handlers
 	r.register(valueobject.MessageTypeUserEquip, valueobject.ActionGetEquippedItems, NewUserEquipHandler(r.services.UserEquipService))
@@ -146,6 +143,10 @@ func (r *messageRouter) registerHandlers() {
 	r.register(valueobject.MessageTypeKillCount, valueobject.ActionGetKillRanking, NewKillCountHandler(r.services.KillCountService))
 	r.register(valueobject.MessageTypeKillCount, valueobject.ActionGetUserKillRank, NewKillCountHandler(r.services.KillCountService))
 	r.register(valueobject.MessageTypeKillCount, valueobject.ActionDeleteKillCount, NewKillCountHandler(r.services.KillCountService))
+
+	// Ranking handlers
+	r.register(valueobject.MessageTypeRanking, valueobject.ActionGetPlayerRanking, NewRankingHandler(r.services.RankingService))
+	r.register(valueobject.MessageTypeRanking, valueobject.ActionGetUserRank, NewRankingHandler(r.services.RankingService))
 }
 
 // register registers a handler for a message type and action

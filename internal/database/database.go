@@ -40,7 +40,7 @@ func ConnectDatabase(cfg *config.Config) (*sql.DB, error) {
 }
 
 func CheckDatabaseTables(db *sql.DB) error {
-	tables := []string{"user", "equip", "playerinfo", "friend", "friend_request", "ranking"}
+	tables := []string{"user", "equip", "playerinfo", "friend", "friend_request"}
 
 	for _, table := range tables {
 		query := fmt.Sprintf("SHOW TABLES LIKE '%s'", table)
@@ -113,22 +113,6 @@ func CreateMissingTables(db *sql.DB) error {
 	}
 	log.Println("Friend_request table created/verified")
 
-	// 排行榜表
-	rankingTable := `
-	CREATE TABLE IF NOT EXISTS ranking (
-		id INT AUTO_INCREMENT PRIMARY KEY,
-		userid INT NOT NULL,
-		rank_type ENUM('level', 'experience', 'equipment_power') DEFAULT 'level',
-		rank_value INT NOT NULL DEFAULT 0,
-		rank_position INT NOT NULL DEFAULT 0,
-		updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-		UNIQUE KEY unique_user_rank_type (userid, rank_type)
-	)`
-
-	if _, err := db.Exec(rankingTable); err != nil {
-		return fmt.Errorf("failed to create ranking table: %v", err)
-	}
-	log.Println("Ranking table created/verified")
 
 	// 创建索引 - 使用兼容的语法
 	indexes := []struct {
@@ -138,7 +122,6 @@ func CreateMissingTables(db *sql.DB) error {
 		{"idx_friend_fromuserid", "CREATE INDEX idx_friend_fromuserid ON friend(fromuserid)"},
 		{"idx_friend_touserid", "CREATE INDEX idx_friend_touserid ON friend(touserid)"},
 		{"idx_friend_request_touserid", "CREATE INDEX idx_friend_request_touserid ON friend_request(touserid)"},
-		{"idx_ranking_type_value", "CREATE INDEX idx_ranking_type_value ON ranking(rank_type, rank_value DESC)"},
 	}
 
 	for _, index := range indexes {

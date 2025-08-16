@@ -38,11 +38,10 @@ type FriendServiceInterface interface {
 
 // RankingServiceInterface defines the interface for ranking service used by websocket handlers
 type RankingServiceInterface interface {
-	GetRanking(req *dto.GetRankingRequest) ([]*dto.RankingResponse, error)
-	GetUserRanking(userID int, rankType string) (*dto.UserRankingResponse, error)
-	UpdateUserRankings(userID int) error
-	RefreshAllRankings() error
+	GetPlayerRanking(req *dto.PlayerRankingRequest) (*dto.GetPlayerRankingResponse, error)
+	GetUserRank(userID int, rankType string) (*dto.UserRankResponse, error)
 }
+
 
 // UserEquipServiceInterface defines the interface for user equipment service used by websocket handlers
 type UserEquipServiceInterface interface {

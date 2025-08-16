@@ -155,7 +155,6 @@ func setupRoutes(hub *websocket.Hub, container *container.Container, cfg *config
 				"Player Management", 
 				"Equipment System",
 				"Friend System",
-				"Ranking System",
 				"Real-time WebSocket Communication",
 			},
 		}

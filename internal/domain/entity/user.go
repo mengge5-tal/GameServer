@@ -30,6 +30,14 @@ type PlayerInfo struct {
 	BloodEnergy int `json:"bloodenergy"`
 }
 
+// PlayerRankingEntry represents a player's ranking entry
+type PlayerRankingEntry struct {
+	UserID   int    `json:"userid"`
+	Username string `json:"username"`
+	Value    int    `json:"value"`
+	Position int    `json:"position"`
+}
+
 // Friend represents a friend relationship entity
 type Friend struct {
 	ID         int       `json:"id"`
@@ -51,15 +59,6 @@ type FriendRequest struct {
 	UpdatedAt  time.Time `json:"updated_at"`
 }
 
-// Ranking represents a ranking entry entity
-type Ranking struct {
-	ID           int       `json:"id"`
-	UserID       int       `json:"userid"`
-	RankType     string    `json:"rank_type"` // level, experience, equipment_power
-	RankValue    int       `json:"rank_value"`
-	RankPosition int       `json:"rank_position"`
-	UpdatedAt    time.Time `json:"updated_at"`
-}
 
 // Equipment represents an equipment entity
 type Equipment struct {

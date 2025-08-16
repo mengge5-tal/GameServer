@@ -171,10 +171,10 @@ func (h *PlayerHandler) handleSaveEquipment(client *Client, message *valueobject
 	if err != nil {
 		// Check for specific error types
 		errorMsg := err.Error()
-		if errorMsg == "type and quality must be positive integers" || 
-		   errorMsg == "equipment not found for update" ||
-		   errorMsg == "unauthorized to update this equipment" ||
-		   errorMsg == "equipment sequence limit reached for this type and quality" {
+		if errorMsg == "type and quality must be positive integers" ||
+			errorMsg == "equipment not found for update" ||
+			errorMsg == "unauthorized to update this equipment" ||
+			errorMsg == "equipment sequence limit reached for this type and quality" {
 			return valueobject.NewErrorResponseWithUniqueID(message.Type, message.Action, valueobject.CodeValidationError, err.Error())
 		}
 		return valueobject.NewErrorResponseWithUniqueID(message.Type, message.Action, valueobject.CodeInternalError, err.Error())
@@ -675,58 +675,6 @@ func (h *UserSourceStoneHandler) handleCheckUserSourceStone(client *Client, mess
 	return valueobject.NewSuccessResponseWithUniqueID(message.Type, message.Action, result)
 }
 
-// RankingHandler handles ranking-related messages
-type RankingHandler struct {
-	rankingService RankingServiceInterface
-}
-
-// NewRankingHandler creates a new ranking handler
-func NewRankingHandler(rankingService RankingServiceInterface) *RankingHandler {
-	return &RankingHandler{rankingService: rankingService}
-}
-
-// Handle handles ranking messages
-func (h *RankingHandler) Handle(client *Client, message *valueobject.Message) *valueobject.Response {
-	switch message.Action {
-	case valueobject.ActionGetAllRank:
-		return h.handleGetAllRank(client, message)
-	case valueobject.ActionGetRank:
-		return h.handleGetRank(client, message)
-	default:
-		return valueobject.NewErrorResponseWithUniqueID(message.Type, message.Action, valueobject.CodeInvalidRequest, "Unknown ranking action")
-	}
-}
-
-func (h *RankingHandler) handleGetAllRank(client *Client, message *valueobject.Message) *valueobject.Response {
-	var req dto.GetRankingRequest
-	if err := json.Unmarshal(message.Data, &req); err != nil {
-		// Set default values if no data provided
-		req.RankType = "level"
-		req.Limit = 50
-	}
-
-	ranking, err := h.rankingService.GetRanking(&req)
-	if err != nil {
-		return valueobject.NewErrorResponseWithUniqueID(message.Type, message.Action, valueobject.CodeInternalError, err.Error())
-	}
-	return valueobject.NewSuccessResponseWithUniqueID(message.Type, message.Action, ranking)
-}
-
-func (h *RankingHandler) handleGetRank(client *Client, message *valueobject.Message) *valueobject.Response {
-	var req struct {
-		RankType string `json:"rank_type"`
-	}
-	if err := json.Unmarshal(message.Data, &req); err != nil {
-		req.RankType = "level" // Default to level ranking
-	}
-
-	ranking, err := h.rankingService.GetUserRanking(client.GetUserID(), req.RankType)
-	if err != nil {
-		return valueobject.NewErrorResponseWithUniqueID(message.Type, message.Action, valueobject.CodeInternalError, err.Error())
-	}
-	return valueobject.NewSuccessResponseWithUniqueID(message.Type, message.Action, ranking)
-}
-
 // UserEquipHandler handles user equipment messages
 type UserEquipHandler struct {
 	userEquipService UserEquipServiceInterface
@@ -1080,4 +1028,58 @@ func (h *UserWeaponHandler) handleCheckUserWeapon(client *Client, message *value
 		return valueobject.NewErrorResponseWithUniqueID(message.Type, message.Action, valueobject.CodeInternalError, err.Error())
 	}
 	return valueobject.NewSuccessResponseWithUniqueID(message.Type, message.Action, result)
+}
+
+// RankingHandler handles ranking-related messages
+type RankingHandler struct {
+	rankingService RankingServiceInterface
+}
+
+// NewRankingHandler creates a new ranking handler
+func NewRankingHandler(rankingService RankingServiceInterface) *RankingHandler {
+	return &RankingHandler{rankingService: rankingService}
+}
+
+// Handle handles ranking messages
+func (h *RankingHandler) Handle(client *Client, message *valueobject.Message) *valueobject.Response {
+	switch message.Action {
+	case valueobject.ActionGetPlayerRanking:
+		return h.handleGetPlayerRanking(client, message)
+	case valueobject.ActionGetUserRank:
+		return h.handleGetUserRank(client, message)
+	default:
+		return valueobject.NewErrorResponseWithUniqueID(message.Type, message.Action, valueobject.CodeInvalidRequest, "Unknown ranking action")
+	}
+}
+
+func (h *RankingHandler) handleGetPlayerRanking(client *Client, message *valueobject.Message) *valueobject.Response {
+	var req dto.PlayerRankingRequest
+	if err := json.Unmarshal(message.Data, &req); err != nil {
+		return valueobject.NewErrorResponseWithUniqueID(message.Type, message.Action, valueobject.CodeInvalidRequest, "Invalid player ranking data")
+	}
+
+	response, err := h.rankingService.GetPlayerRanking(&req)
+	if err != nil {
+		return valueobject.NewErrorResponseWithUniqueID(message.Type, message.Action, valueobject.CodeInternalError, err.Error())
+	}
+	return valueobject.NewSuccessResponseWithUniqueID(message.Type, message.Action, response)
+}
+
+func (h *RankingHandler) handleGetUserRank(client *Client, message *valueobject.Message) *valueobject.Response {
+	var req dto.GetUserRankRequest
+	if err := json.Unmarshal(message.Data, &req); err != nil {
+		return valueobject.NewErrorResponseWithUniqueID(message.Type, message.Action, valueobject.CodeInvalidRequest, "Invalid user rank data")
+	}
+
+	// If no user ID provided, use client's user ID
+	userID := req.UserID
+	if userID <= 0 {
+		userID = client.GetUserID()
+	}
+
+	response, err := h.rankingService.GetUserRank(userID, req.RankType)
+	if err != nil {
+		return valueobject.NewErrorResponseWithUniqueID(message.Type, message.Action, valueobject.CodeInternalError, err.Error())
+	}
+	return valueobject.NewSuccessResponseWithUniqueID(message.Type, message.Action, response)
 }

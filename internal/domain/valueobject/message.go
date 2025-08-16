@@ -16,7 +16,6 @@ const (
 	MessageTypeUserEquip  MessageType = "userequip"
 	MessageTypePlayer     MessageType = "player"
 	MessageTypeFriend     MessageType = "friend"
-	MessageTypeRank       MessageType = "rank"
 	MessageTypeOnline     MessageType = "online"
 	MessageTypeExperience MessageType = "experience"
 	MessageTypeWeapon          MessageType = "weapon"
@@ -24,6 +23,7 @@ const (
 	MessageTypeSourceStone     MessageType = "sourcestone"
 	MessageTypeUserSourceStone MessageType = "usersourcestone"
 	MessageTypeKillCount       MessageType = "killcount"
+	MessageTypeRanking         MessageType = "ranking"
 )
 
 // MessageAction represents different actions within message types
@@ -69,9 +69,6 @@ const (
 	// Friend notification (server-sent)
 	ActionFriendRequestNotification MessageAction = "friendRequestNotification"
 
-	// Rank actions
-	ActionGetAllRank MessageAction = "getAllRank"
-	ActionGetRank    MessageAction = "getRank"
 
 	// Online actions
 	ActionGetOnlineUsers MessageAction = "getOnlineUsers"
@@ -113,6 +110,10 @@ const (
 	ActionDeleteKillCount         MessageAction = "deleteKillCount"
 	ActionGetKillRanking          MessageAction = "getKillRanking"
 	ActionGetUserKillRank         MessageAction = "getUserKillRank"
+
+	// Ranking actions
+	ActionGetPlayerRanking MessageAction = "getPlayerRanking"
+	ActionGetUserRank      MessageAction = "getUserRank"
 )
 
 // Message represents a WebSocket message
