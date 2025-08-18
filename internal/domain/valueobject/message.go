@@ -43,6 +43,7 @@ const (
 	ActionSaveEquip   MessageAction = "saveEquip"
 	ActionDeleteEquip MessageAction = "deleteEquip"
 	ActionDelEquip    MessageAction = "delEquip"
+	ActionBatchDeleteEquip MessageAction = "batchDeleteEquip"
 
 	// User Equipment actions
 	ActionGetEquippedItems  MessageAction = "getEquippedItems"
@@ -100,6 +101,7 @@ const (
 	ActionUpdateUserSourceStone  MessageAction = "updateUserSourceStone"
 	ActionRemoveUserSourceStone  MessageAction = "removeUserSourceStone"
 	ActionCheckUserSourceStone   MessageAction = "checkUserSourceStone"
+	ActionBatchDeleteUserSourceStone MessageAction = "batchDeleteUserSourceStone"
 
 	// Kill Count actions
 	ActionGetKillCount            MessageAction = "getKillCount"

@@ -108,6 +108,98 @@ func (r *mysqlUserSourceStoneRepository) Delete(id int) error {
 	return err
 }
 
+// BatchDelete deletes multiple user source stone ownerships by IDs
+func (r *mysqlUserSourceStoneRepository) BatchDelete(ids []int) (int, []int, error) {
+	if len(ids) == 0 {
+		return 0, nil, nil
+	}
+
+	var deletedCount int
+	var failedIDs []int
+
+	// Begin transaction
+	tx, err := r.db.Begin()
+	if err != nil {
+		return 0, nil, err
+	}
+	defer tx.Rollback()
+
+	for _, id := range ids {
+		query := "DELETE FROM user_sourcestone WHERE id = ?"
+		result, err := tx.Exec(query, id)
+		if err != nil {
+			failedIDs = append(failedIDs, id)
+			continue
+		}
+
+		rowsAffected, err := result.RowsAffected()
+		if err != nil {
+			failedIDs = append(failedIDs, id)
+			continue
+		}
+
+		if rowsAffected > 0 {
+			deletedCount++
+		} else {
+			// User source stone not found
+			failedIDs = append(failedIDs, id)
+		}
+	}
+
+	// Commit transaction
+	if err := tx.Commit(); err != nil {
+		return 0, nil, err
+	}
+
+	return deletedCount, failedIDs, nil
+}
+
+// BatchDeleteByUserAndSourceStones deletes multiple user source stone ownerships by user ID and source stone IDs
+func (r *mysqlUserSourceStoneRepository) BatchDeleteByUserAndSourceStones(userID int, sourcestoneIDs []int) (int, []int, error) {
+	if len(sourcestoneIDs) == 0 {
+		return 0, nil, nil
+	}
+
+	var deletedCount int
+	var failedIDs []int
+
+	// Begin transaction
+	tx, err := r.db.Begin()
+	if err != nil {
+		return 0, nil, err
+	}
+	defer tx.Rollback()
+
+	for _, sourcestoneID := range sourcestoneIDs {
+		query := "DELETE FROM user_sourcestone WHERE userid = ? AND sourcestoneid = ?"
+		result, err := tx.Exec(query, userID, sourcestoneID)
+		if err != nil {
+			failedIDs = append(failedIDs, sourcestoneID)
+			continue
+		}
+
+		rowsAffected, err := result.RowsAffected()
+		if err != nil {
+			failedIDs = append(failedIDs, sourcestoneID)
+			continue
+		}
+
+		if rowsAffected > 0 {
+			deletedCount++
+		} else {
+			// User source stone not found
+			failedIDs = append(failedIDs, sourcestoneID)
+		}
+	}
+
+	// Commit transaction
+	if err := tx.Commit(); err != nil {
+		return 0, nil, err
+	}
+
+	return deletedCount, failedIDs, nil
+}
+
 // DeleteByUserAndSourceStone deletes user source stone ownership by user ID and source stone ID
 func (r *mysqlUserSourceStoneRepository) DeleteByUserAndSourceStone(userID, sourcestoneID int) error {
 	query := "DELETE FROM user_sourcestone WHERE userid = ? AND sourcestoneid = ?"

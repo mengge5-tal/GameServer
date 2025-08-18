@@ -20,6 +20,7 @@ type PlayerServiceInterface interface {
 	GetUserEquipment(userID int) ([]*dto.EquipmentResponse, error)
 	SaveEquipment(req *dto.SaveEquipmentRequest) (*dto.EquipmentResponse, error)
 	DeleteEquipment(equipID, userID int) error
+	BatchDeleteEquipment(req *dto.BatchDeleteEquipmentRequest, userID int) (*dto.BatchDeleteEquipmentResponse, error)
 }
 
 // FriendServiceInterface defines the interface for friend service used by websocket handlers
@@ -90,6 +91,7 @@ type UserSourceStoneServiceInterface interface {
 	RemoveUserSourceStone(req *dto.RemoveUserSourceStoneRequest) error
 	RemoveUserSourceStoneByID(id int) error
 	CheckUserSourceStone(req *dto.CheckUserSourceStoneRequest) (*dto.CheckUserSourceStoneResponse, error)
+	BatchDeleteUserSourceStone(req *dto.BatchDeleteUserSourceStoneRequest, userID int) (*dto.BatchDeleteUserSourceStoneResponse, error)
 }
 
 // KillCountServiceInterface defines the interface for kill count service used by websocket handlers

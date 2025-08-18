@@ -125,6 +125,8 @@ func (h *PlayerHandler) Handle(client *Client, message *valueobject.Message) *va
 		return h.handleDeleteEquipment(client, message)
 	case valueobject.ActionDelEquip:
 		return h.handleDeleteEquipment(client, message)
+	case valueobject.ActionBatchDeleteEquip:
+		return h.handleBatchDeleteEquipment(client, message)
 	default:
 		return valueobject.NewErrorResponseWithUniqueID(message.Type, message.Action, valueobject.CodeInvalidRequest, "Unknown player action")
 	}
@@ -196,6 +198,24 @@ func (h *PlayerHandler) handleDeleteEquipment(client *Client, message *valueobje
 	}
 
 	return valueobject.NewSuccessResponseWithUniqueID(message.Type, message.Action, map[string]string{"message": "Equipment deleted successfully"})
+}
+
+func (h *PlayerHandler) handleBatchDeleteEquipment(client *Client, message *valueobject.Message) *valueobject.Response {
+	var req dto.BatchDeleteEquipmentRequest
+	if err := json.Unmarshal(message.Data, &req); err != nil {
+		return valueobject.NewErrorResponseWithUniqueID(message.Type, message.Action, valueobject.CodeInvalidRequest, "Invalid batch delete data")
+	}
+
+	if len(req.EquipIDs) == 0 {
+		return valueobject.NewErrorResponseWithUniqueID(message.Type, message.Action, valueobject.CodeInvalidRequest, "No equipment IDs provided")
+	}
+
+	response, err := h.playerService.BatchDeleteEquipment(&req, client.GetUserID())
+	if err != nil {
+		return valueobject.NewErrorResponseWithUniqueID(message.Type, message.Action, valueobject.CodeInternalError, err.Error())
+	}
+
+	return valueobject.NewSuccessResponseWithUniqueID(message.Type, message.Action, response)
 }
 
 // FriendHandler handles friend-related messages
@@ -586,6 +606,8 @@ func (h *UserSourceStoneHandler) Handle(client *Client, message *valueobject.Mes
 		return h.handleRemoveUserSourceStone(client, message)
 	case valueobject.ActionCheckUserSourceStone:
 		return h.handleCheckUserSourceStone(client, message)
+	case valueobject.ActionBatchDeleteUserSourceStone:
+		return h.handleBatchDeleteUserSourceStone(client, message)
 	default:
 		return valueobject.NewErrorResponseWithUniqueID(message.Type, message.Action, valueobject.CodeInvalidRequest, "Unknown user source stone action")
 	}
@@ -669,6 +691,20 @@ func (h *UserSourceStoneHandler) handleCheckUserSourceStone(client *Client, mess
 	req.UserID = client.GetUserID()
 
 	result, err := h.userSourceStoneService.CheckUserSourceStone(&req)
+	if err != nil {
+		return valueobject.NewErrorResponseWithUniqueID(message.Type, message.Action, valueobject.CodeInternalError, err.Error())
+	}
+	return valueobject.NewSuccessResponseWithUniqueID(message.Type, message.Action, result)
+}
+
+func (h *UserSourceStoneHandler) handleBatchDeleteUserSourceStone(client *Client, message *valueobject.Message) *valueobject.Response {
+	var req dto.BatchDeleteUserSourceStoneRequest
+	if err := json.Unmarshal(message.Data, &req); err != nil {
+		return valueobject.NewErrorResponseWithUniqueID(message.Type, message.Action, valueobject.CodeInvalidRequest, "Invalid batch delete user source stone data")
+	}
+
+	userID := client.GetUserID()
+	result, err := h.userSourceStoneService.BatchDeleteUserSourceStone(&req, userID)
 	if err != nil {
 		return valueobject.NewErrorResponseWithUniqueID(message.Type, message.Action, valueobject.CodeInternalError, err.Error())
 	}

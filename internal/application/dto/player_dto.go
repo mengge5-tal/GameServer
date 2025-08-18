@@ -114,3 +114,15 @@ func (req *SaveEquipmentRequest) GetEffectiveEquipmentData() EquipmentData {
 		Type:          req.Type,
 	}
 }
+
+// BatchDeleteEquipmentRequest represents batch delete equipment request
+type BatchDeleteEquipmentRequest struct {
+	EquipIDs []int `json:"equipids"`
+}
+
+// BatchDeleteEquipmentResponse represents batch delete equipment response
+type BatchDeleteEquipmentResponse struct {
+	DeletedCount int   `json:"deleted_count"`
+	FailedIDs    []int `json:"failed_ids,omitempty"`
+	Message      string `json:"message"`
+}

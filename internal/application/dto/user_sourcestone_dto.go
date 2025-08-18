@@ -60,3 +60,15 @@ type CheckUserSourceStoneResponse struct {
 	OwnsSourceStone  bool `json:"owns_sourcestone"`
 	SourceStoneCount int  `json:"sourcestonecount,omitempty"`
 }
+
+// BatchDeleteUserSourceStoneRequest represents batch delete user source stone request
+type BatchDeleteUserSourceStoneRequest struct {
+	SourceStoneIDs []int `json:"sourcestoneids"`
+}
+
+// BatchDeleteUserSourceStoneResponse represents batch delete user source stone response
+type BatchDeleteUserSourceStoneResponse struct {
+	DeletedCount int   `json:"deleted_count"`
+	FailedIDs    []int `json:"failed_ids,omitempty"`
+	Message      string `json:"message"`
+}

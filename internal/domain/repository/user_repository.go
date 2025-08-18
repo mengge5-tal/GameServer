@@ -55,6 +55,7 @@ type EquipmentRepository interface {
 	Create(equipment *entity.Equipment) error
 	Update(equipment *entity.Equipment) error
 	Delete(equipID int) error
+	BatchDelete(equipIDs []int) (int, []int, error) // returns (deletedCount, failedIDs, error)
 	GetUserEquipmentCount(userID int) (int, error)
 }
 
@@ -98,6 +99,8 @@ type UserSourceStoneRepository interface {
 	Create(userSourceStone *entity.UserSourceStone) error
 	Update(userSourceStone *entity.UserSourceStone) error
 	Delete(id int) error
+	BatchDelete(ids []int) (int, []int, error) // returns (deletedCount, failedIDs, error)
+	BatchDeleteByUserAndSourceStones(userID int, sourcestoneIDs []int) (int, []int, error) // returns (deletedCount, failedIDs, error)
 	DeleteByUserAndSourceStone(userID, sourcestoneID int) error
 	UserOwnsSourceStone(userID, sourcestoneID int) (bool, error)
 }

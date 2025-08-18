@@ -221,6 +221,53 @@ func (s *PlayerService) DeleteEquipment(equipID, userID int) error {
 	return nil
 }
 
+// BatchDeleteEquipment deletes multiple equipment items
+func (s *PlayerService) BatchDeleteEquipment(req *dto.BatchDeleteEquipmentRequest, userID int) (*dto.BatchDeleteEquipmentResponse, error) {
+	if len(req.EquipIDs) == 0 {
+		return &dto.BatchDeleteEquipmentResponse{
+			DeletedCount: 0,
+			Message:      "No equipment IDs provided",
+		}, nil
+	}
+
+	// Validate that equipment IDs are positive
+	var validIDs []int
+	for _, id := range req.EquipIDs {
+		if id > 0 {
+			validIDs = append(validIDs, id)
+		}
+	}
+
+	if len(validIDs) == 0 {
+		return &dto.BatchDeleteEquipmentResponse{
+			DeletedCount: 0,
+			Message:      "No valid equipment IDs provided",
+		}, nil
+	}
+
+	// Delete from database
+	deletedCount, failedIDs, err := s.equipmentRepo.BatchDelete(validIDs)
+	if err != nil {
+		return nil, err
+	}
+
+	// Invalidate cache
+	cacheKey := fmt.Sprintf("equipment:%d", userID)
+	s.cacheService.Delete(cacheKey)
+
+	// Prepare response
+	message := fmt.Sprintf("Successfully deleted %d equipment items", deletedCount)
+	if len(failedIDs) > 0 {
+		message += fmt.Sprintf(", %d items failed to delete", len(failedIDs))
+	}
+
+	return &dto.BatchDeleteEquipmentResponse{
+		DeletedCount: deletedCount,
+		FailedIDs:    failedIDs,
+		Message:      message,
+	}, nil
+}
+
 // convertEquipmentToDTO converts equipment entities to DTOs
 func (s *PlayerService) convertEquipmentToDTO(equipment []*entity.Equipment) []*dto.EquipmentResponse {
 	var response []*dto.EquipmentResponse

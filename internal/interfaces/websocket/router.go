@@ -86,6 +86,7 @@ func (r *messageRouter) registerHandlers() {
 	r.register(valueobject.MessageTypeEquip, valueobject.ActionSaveEquip, NewPlayerHandler(r.services.PlayerService))
 	r.register(valueobject.MessageTypeEquip, valueobject.ActionDeleteEquip, NewPlayerHandler(r.services.PlayerService))
 	r.register(valueobject.MessageTypeEquip, valueobject.ActionDelEquip, NewPlayerHandler(r.services.PlayerService))
+	r.register(valueobject.MessageTypeEquip, valueobject.ActionBatchDeleteEquip, NewPlayerHandler(r.services.PlayerService))
 
 	// Friend handlers
 	r.register(valueobject.MessageTypeFriend, valueobject.ActionGetFriends, NewFriendHandler(r.services.FriendService))
@@ -133,6 +134,7 @@ func (r *messageRouter) registerHandlers() {
 	r.register(valueobject.MessageTypeUserSourceStone, valueobject.ActionUpdateUserSourceStone, NewUserSourceStoneHandler(r.services.UserSourceStoneService))
 	r.register(valueobject.MessageTypeUserSourceStone, valueobject.ActionRemoveUserSourceStone, NewUserSourceStoneHandler(r.services.UserSourceStoneService))
 	r.register(valueobject.MessageTypeUserSourceStone, valueobject.ActionCheckUserSourceStone, NewUserSourceStoneHandler(r.services.UserSourceStoneService))
+	r.register(valueobject.MessageTypeUserSourceStone, valueobject.ActionBatchDeleteUserSourceStone, NewUserSourceStoneHandler(r.services.UserSourceStoneService))
 
 	// Kill Count handlers
 	r.register(valueobject.MessageTypeKillCount, valueobject.ActionGetKillCount, NewKillCountHandler(r.services.KillCountService))

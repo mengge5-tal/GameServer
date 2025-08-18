@@ -5,6 +5,7 @@ import (
 	"GameServer/internal/domain/entity"
 	"GameServer/internal/domain/repository"
 	"database/sql"
+	"fmt"
 )
 
 // UserSourceStoneService handles user source stone ownership business logic
@@ -272,4 +273,47 @@ func (s *UserSourceStoneService) CheckUserSourceStone(req *dto.CheckUserSourceSt
 	}
 
 	return response, nil
+}
+
+// BatchDeleteUserSourceStone deletes multiple user source stone ownerships
+func (s *UserSourceStoneService) BatchDeleteUserSourceStone(req *dto.BatchDeleteUserSourceStoneRequest, userID int) (*dto.BatchDeleteUserSourceStoneResponse, error) {
+	if len(req.SourceStoneIDs) == 0 {
+		return &dto.BatchDeleteUserSourceStoneResponse{
+			DeletedCount: 0,
+			Message:      "No source stone IDs provided",
+		}, nil
+	}
+
+	// Validate that source stone IDs are positive
+	var validSourceStoneIDs []int
+	for _, sourcestoneID := range req.SourceStoneIDs {
+		if sourcestoneID > 0 {
+			validSourceStoneIDs = append(validSourceStoneIDs, sourcestoneID)
+		}
+	}
+
+	if len(validSourceStoneIDs) == 0 {
+		return &dto.BatchDeleteUserSourceStoneResponse{
+			DeletedCount: 0,
+			Message:      "No valid source stone IDs provided",
+		}, nil
+	}
+
+	// Delete from database using userID and sourcestone IDs
+	deletedCount, failedIDs, err := s.userSourceStoneRepo.BatchDeleteByUserAndSourceStones(userID, validSourceStoneIDs)
+	if err != nil {
+		return nil, err
+	}
+
+	// Prepare response
+	message := fmt.Sprintf("Successfully deleted %d user source stone items", deletedCount)
+	if len(failedIDs) > 0 {
+		message += fmt.Sprintf(", %d items failed to delete", len(failedIDs))
+	}
+
+	return &dto.BatchDeleteUserSourceStoneResponse{
+		DeletedCount: deletedCount,
+		FailedIDs:    failedIDs,
+		Message:      message,
+	}, nil
 }

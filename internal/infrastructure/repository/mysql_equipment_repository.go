@@ -120,6 +120,52 @@ func (r *mysqlEquipmentRepository) Delete(equipID int) error {
 	return err
 }
 
+// BatchDelete deletes multiple equipment by IDs
+func (r *mysqlEquipmentRepository) BatchDelete(equipIDs []int) (int, []int, error) {
+	if len(equipIDs) == 0 {
+		return 0, nil, nil
+	}
+
+	var deletedCount int
+	var failedIDs []int
+
+	// Begin transaction
+	tx, err := r.db.Begin()
+	if err != nil {
+		return 0, nil, err
+	}
+	defer tx.Rollback()
+
+	for _, equipID := range equipIDs {
+		query := "DELETE FROM equip WHERE equipid = ?"
+		result, err := tx.Exec(query, equipID)
+		if err != nil {
+			failedIDs = append(failedIDs, equipID)
+			continue
+		}
+
+		rowsAffected, err := result.RowsAffected()
+		if err != nil {
+			failedIDs = append(failedIDs, equipID)
+			continue
+		}
+
+		if rowsAffected > 0 {
+			deletedCount++
+		} else {
+			// Equipment not found
+			failedIDs = append(failedIDs, equipID)
+		}
+	}
+
+	// Commit transaction
+	if err := tx.Commit(); err != nil {
+		return 0, nil, err
+	}
+
+	return deletedCount, failedIDs, nil
+}
+
 // GetUserEquipmentCount returns the count of equipment for a user
 func (r *mysqlEquipmentRepository) GetUserEquipmentCount(userID int) (int, error) {
 	var count int
