@@ -19,12 +19,13 @@ func NewMySQLSourceStoneRepository(db *sql.DB) repository.SourceStoneRepository 
 // GetByID retrieves source stone by ID
 func (r *mysqlSourceStoneRepository) GetByID(sourcestoneID int) (*entity.SourceStone, error) {
 	stone := &entity.SourceStone{}
-	query := `SELECT sourcestoneid, sourcestonename, sourcestonequality, sourcestoneeffect 
+	query := `SELECT sourcestoneid, sourcestonename, sourcestonequality, sourcestoneeffect, quality, sourcestonetype 
 			  FROM sourcestone WHERE sourcestoneid = ?`
 	
 	err := r.db.QueryRow(query, sourcestoneID).Scan(
 		&stone.SourceStoneID, &stone.SourceStoneName, 
 		&stone.SourceStoneQuality, &stone.SourceStoneEffect,
+		&stone.Quality, &stone.SourceStoneType,
 	)
 	if err != nil {
 		if err == sql.ErrNoRows {
@@ -37,7 +38,7 @@ func (r *mysqlSourceStoneRepository) GetByID(sourcestoneID int) (*entity.SourceS
 
 // GetAll retrieves all source stones
 func (r *mysqlSourceStoneRepository) GetAll() ([]*entity.SourceStone, error) {
-	query := `SELECT sourcestoneid, sourcestonename, sourcestonequality, sourcestoneeffect 
+	query := `SELECT sourcestoneid, sourcestonename, sourcestonequality, sourcestoneeffect, quality, sourcestonetype 
 			  FROM sourcestone ORDER BY sourcestoneid ASC`
 	
 	rows, err := r.db.Query(query)
@@ -52,6 +53,7 @@ func (r *mysqlSourceStoneRepository) GetAll() ([]*entity.SourceStone, error) {
 		err := rows.Scan(
 			&stone.SourceStoneID, &stone.SourceStoneName,
 			&stone.SourceStoneQuality, &stone.SourceStoneEffect,
+			&stone.Quality, &stone.SourceStoneType,
 		)
 		if err != nil {
 			return nil, err

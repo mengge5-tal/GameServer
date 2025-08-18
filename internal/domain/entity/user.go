@@ -88,6 +88,8 @@ type SourceStone struct {
 	SourceStoneName    string `json:"sourcestonename"`
 	SourceStoneQuality string `json:"sourcestonequality"`
 	SourceStoneEffect  string `json:"sourcestoneeffect"`
+	Quality            int    `json:"quality"`
+	SourceStoneType    int    `json:"sourcestonetype"`
 }
 
 // Experience represents experience level mapping

@@ -37,6 +37,8 @@ func (s *SourceStoneService) GetSourceStoneByID(sourcestoneID int) (*dto.SourceS
 		SourceStoneName:    sourceStone.SourceStoneName,
 		SourceStoneQuality: sourceStone.SourceStoneQuality,
 		SourceStoneEffect:  sourceStone.SourceStoneEffect,
+		Quality:            sourceStone.Quality,
+		SourceStoneType:    sourceStone.SourceStoneType,
 	}, nil
 }
 
@@ -54,6 +56,8 @@ func (s *SourceStoneService) GetAllSourceStones() ([]*dto.SourceStoneResponse, e
 			SourceStoneName:    stone.SourceStoneName,
 			SourceStoneQuality: stone.SourceStoneQuality,
 			SourceStoneEffect:  stone.SourceStoneEffect,
+			Quality:            stone.Quality,
+			SourceStoneType:    stone.SourceStoneType,
 		})
 	}
 
