@@ -30,6 +30,7 @@ type Container struct {
 	UserSourceStoneService *service.UserSourceStoneService
 	KillCountService       *service.KillCountService
 	RankingService         *service.RankingService
+	UnionService           *service.UnionService
 
 	// Repositories
 	UserRepo            repository.UserRepository
@@ -41,8 +42,12 @@ type Container struct {
 	UserEquipRepo       repository.UserEquipRepository
 	WeaponRepo          repository.WeaponRepository
 	UserWeaponRepo      repository.UserWeaponRepository
-	UserSourceStoneRepo repository.UserSourceStoneRepository
-	KillCountRepo       repository.KillCountRepository
+	UserSourceStoneRepo     repository.UserSourceStoneRepository
+	KillCountRepo           repository.KillCountRepository
+	UnionRepo               repository.UnionRepository
+	UnionMemberRepo         repository.UnionMemberRepository
+	UnionRequestRepo        repository.UnionRequestRepository
+	UnionExperienceRepo     repository.UnionExperienceRepository
 
 	// Domain Services
 	AuthDomainService domainService.AuthDomainService
@@ -80,6 +85,12 @@ func (c *Container) initializeRepositories() error {
 	c.UserWeaponRepo = infraRepo.NewMySQLUserWeaponRepository(c.Database)
 	c.UserSourceStoneRepo = infraRepo.NewMySQLUserSourceStoneRepository(c.Database)
 	c.KillCountRepo = infraRepo.NewMySQLKillCountRepository(c.Database)
+	
+	// Union repositories
+	c.UnionRepo = infraRepo.NewMySQLUnionRepository(c.Database)
+	c.UnionMemberRepo = infraRepo.NewMySQLUnionMemberRepository(c.Database)
+	c.UnionRequestRepo = infraRepo.NewMySQLUnionRequestRepository(c.Database)
+	c.UnionExperienceRepo = infraRepo.NewMySQLUnionExperienceRepository(c.Database)
 
 	return nil
 }
@@ -152,6 +163,16 @@ func (c *Container) initializeServices() error {
 		c.PlayerRepo,
 	)
 
+	c.UnionService = service.NewUnionService(
+		c.UnionRepo,
+		c.UnionMemberRepo,
+		c.UnionRequestRepo,
+		c.UnionExperienceRepo,
+		c.PlayerRepo,
+		c.UserRepo,
+		c.CacheService,
+	)
+
 	return nil
 }
 
@@ -169,6 +190,7 @@ func (c *Container) GetWebSocketServices() *websocket.ServiceContainer {
 		UserSourceStoneService: c.UserSourceStoneService,
 		KillCountService:       c.KillCountService,
 		RankingService:         c.RankingService,
+		UnionService:           c.UnionService,
 	}
 }
 

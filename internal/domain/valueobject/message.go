@@ -24,6 +24,7 @@ const (
 	MessageTypeUserSourceStone MessageType = "usersourcestone"
 	MessageTypeKillCount       MessageType = "killcount"
 	MessageTypeRanking         MessageType = "ranking"
+	MessageTypeUnion           MessageType = "union"
 )
 
 // MessageAction represents different actions within message types
@@ -116,6 +117,18 @@ const (
 	// Ranking actions
 	ActionGetPlayerRanking MessageAction = "getPlayerRanking"
 	ActionGetUserRank      MessageAction = "getUserRank"
+
+	// Union actions
+	ActionCreateUnion          MessageAction = "createUnion"
+	ActionJoinUnion            MessageAction = "joinUnion"
+	ActionLeaveUnion           MessageAction = "leaveUnion"
+	ActionGetMyUnion           MessageAction = "getMyUnion"
+	ActionGetUnionInfo         MessageAction = "getUnionInfo"
+	ActionGetRecommendedUnions MessageAction = "getRecommendedUnions"
+	ActionProcessUnionRequest  MessageAction = "processUnionRequest"
+	ActionGetUnionRanking      MessageAction = "getUnionRanking"
+	ActionGetMyUnionRank       MessageAction = "getMyUnionRank"
+	ActionDismissUnion         MessageAction = "dismissUnion"
 )
 
 // Message represents a WebSocket message

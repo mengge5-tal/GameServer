@@ -46,6 +46,7 @@ type ServiceContainer struct {
 	UserSourceStoneService UserSourceStoneServiceInterface
 	KillCountService       KillCountServiceInterface
 	RankingService         RankingServiceInterface
+	UnionService           UnionServiceInterface
 }
 
 // NewHub creates a new Hub instance

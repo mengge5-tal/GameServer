@@ -149,6 +149,18 @@ func (r *messageRouter) registerHandlers() {
 	// Ranking handlers
 	r.register(valueobject.MessageTypeRanking, valueobject.ActionGetPlayerRanking, NewRankingHandler(r.services.RankingService))
 	r.register(valueobject.MessageTypeRanking, valueobject.ActionGetUserRank, NewRankingHandler(r.services.RankingService))
+
+	// Union handlers
+	r.register(valueobject.MessageTypeUnion, valueobject.ActionGetMyUnion, NewUnionHandler(r.services.UnionService))
+	r.register(valueobject.MessageTypeUnion, valueobject.ActionCreateUnion, NewUnionHandler(r.services.UnionService))
+	r.register(valueobject.MessageTypeUnion, valueobject.ActionJoinUnion, NewUnionHandler(r.services.UnionService))
+	r.register(valueobject.MessageTypeUnion, valueobject.ActionGetRecommendedUnions, NewUnionHandler(r.services.UnionService))
+	r.register(valueobject.MessageTypeUnion, valueobject.ActionProcessUnionRequest, NewUnionHandler(r.services.UnionService))
+	r.register(valueobject.MessageTypeUnion, valueobject.ActionGetUnionInfo, NewUnionHandler(r.services.UnionService))
+	r.register(valueobject.MessageTypeUnion, valueobject.ActionLeaveUnion, NewUnionHandler(r.services.UnionService))
+	r.register(valueobject.MessageTypeUnion, valueobject.ActionDismissUnion, NewUnionHandler(r.services.UnionService))
+	r.register(valueobject.MessageTypeUnion, valueobject.ActionGetUnionRanking, NewUnionHandler(r.services.UnionService))
+	r.register(valueobject.MessageTypeUnion, valueobject.ActionGetMyUnionRank, NewUnionHandler(r.services.UnionService))
 }
 
 // register registers a handler for a message type and action

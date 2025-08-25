@@ -106,3 +106,11 @@ type DismissUnionRequest struct {
 	UnionID       int `json:"unionid"`
 	ChairpersonID int `json:"chairpersonid"`
 }
+
+// UnionRankResponse represents user's union ranking information
+type UnionRankResponse struct {
+	InUnion   bool   `json:"in_union"`
+	UnionName string `json:"union_name,omitempty"`
+	Rank      int    `json:"rank,omitempty"`
+	Message   string `json:"message,omitempty"`
+}

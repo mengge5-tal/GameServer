@@ -106,3 +106,17 @@ type KillCountServiceInterface interface {
 	DeleteKillCount(id int) error
 	ResetAllKillCounts() error
 }
+
+// UnionServiceInterface defines the interface for union service used by websocket handlers
+type UnionServiceInterface interface {
+	GetMyUnionInfo(userID int) (*dto.UnionResponse, error)
+	CreateUnion(req *dto.CreateUnionRequest) (*dto.UnionResponse, error)
+	JoinUnion(req *dto.JoinUnionRequest) error
+	GetRecommendedUnions(limit int) (*dto.UnionListResponse, error)
+	ProcessUnionRequest(req *dto.ProcessUnionRequestDTO) error
+	GetUnionInfo(unionID int) (*dto.UnionResponse, error)
+	LeaveUnion(userID int) error
+	DismissUnion(req *dto.DismissUnionRequest) error
+	GetUnionRanking(limit int) (*dto.UnionListResponse, error)
+	GetMyUnionRank(userID int) (*dto.UnionRankResponse, error)
+}
