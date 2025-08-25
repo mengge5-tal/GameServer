@@ -208,3 +208,176 @@ type KillRankingEntry struct {
 	Count    int    `json:"count"` // Total kill count
 	Rank     int    `json:"rank"`  // Ranking position
 }
+
+// Union represents a union/guild entity
+type Union struct {
+	UnionID           int       `json:"unionid"`
+	UnionName         string    `json:"unionname"`
+	ChairpersonID     int       `json:"chairpersonid"`
+	ChairpersonName   string    `json:"chairpersonname"`
+	ChairpersonLevel  int       `json:"chairpersonlevel"`
+	UnionLevel        int       `json:"unionlevel"`
+	UnionMembers      int       `json:"unionmembers"`
+	Experience        int       `json:"experience"`
+	CreatedTime       time.Time `json:"created_time"`
+	UnionDesc         string    `json:"union_desc"`
+}
+
+// Validate validates union data
+func (u *Union) Validate() error {
+	if len(u.UnionName) < 2 || len(u.UnionName) > 100 {
+		return NewDomainError("工会名称长度必须在2-100字符之间")
+	}
+	if u.ChairpersonID <= 0 {
+		return NewDomainError("会长ID必须为正数")
+	}
+	if len(u.ChairpersonName) < 1 || len(u.ChairpersonName) > 100 {
+		return NewDomainError("会长名称长度必须在1-100字符之间")
+	}
+	if u.ChairpersonLevel <= 0 {
+		return NewDomainError("会长等级必须为正数")
+	}
+	if u.UnionLevel <= 0 {
+		return NewDomainError("工会等级必须为正数")
+	}
+	if u.UnionMembers < 0 {
+		return NewDomainError("工会成员数不能为负数")
+	}
+	if u.Experience < 0 {
+		return NewDomainError("工会经验值不能为负数")
+	}
+	if len(u.UnionDesc) > 1000 {
+		return NewDomainError("工会简介不能超过1000字符")
+	}
+	return nil
+}
+
+// UnionMember represents a union member entity
+type UnionMember struct {
+	ID          int       `json:"id"`
+	UnionID     int       `json:"unionid"`
+	UnionName   string    `json:"unionname"`
+	MemberID    int       `json:"memberid"`
+	MemberLevel int       `json:"memberlevel"`
+	JoinedTime  time.Time `json:"joined_time"`
+	RoleID      int       `json:"roleid"` // 0=普通成员, 1=副会长, 2=会长
+}
+
+// Validate validates union member data
+func (um *UnionMember) Validate() error {
+	if um.UnionID <= 0 {
+		return NewDomainError("工会ID必须为正数")
+	}
+	if len(um.UnionName) < 1 || len(um.UnionName) > 100 {
+		return NewDomainError("工会名称长度必须在1-100字符之间")
+	}
+	if um.MemberID <= 0 {
+		return NewDomainError("成员ID必须为正数")
+	}
+	if um.MemberLevel <= 0 {
+		return NewDomainError("成员等级必须为正数")
+	}
+	if um.RoleID < 0 || um.RoleID > 2 {
+		return NewDomainError("成员角色ID必须在0-2之间")
+	}
+	return nil
+}
+
+// GetRoleName returns the role name based on role ID
+func (um *UnionMember) GetRoleName() string {
+	switch um.RoleID {
+	case 0:
+		return "普通成员"
+	case 1:
+		return "副会长"
+	case 2:
+		return "会长"
+	default:
+		return "未知角色"
+	}
+}
+
+// UnionExperience represents union level experience requirements
+type UnionExperience struct {
+	UnionLevel int `json:"unionlevel"`
+	Experience int `json:"experience"`
+}
+
+// Validate validates union experience data
+func (ue *UnionExperience) Validate() error {
+	if ue.UnionLevel <= 0 {
+		return NewDomainError("工会等级必须为正数")
+	}
+	if ue.Experience < 0 {
+		return NewDomainError("所需经验值不能为负数")
+	}
+	return nil
+}
+
+// UnionRequest represents a union join request entity
+type UnionRequest struct {
+	ID             int       `json:"id"`
+	UnionID        int       `json:"unionid"`
+	ApplicantID    int       `json:"applicantid"`
+	ApplicantName  string    `json:"applicantname"`
+	ApplicantLevel int       `json:"applicantlevel"`
+	ChairpersonID  int       `json:"chairpersonid"`
+	RequestStatus  int       `json:"request_status"` // 1=待处理, 2=通过, 3=拒绝
+	RequestTime    time.Time `json:"request_time"`
+}
+
+// Validate validates union request data
+func (ur *UnionRequest) Validate() error {
+	if ur.UnionID <= 0 {
+		return NewDomainError("工会ID必须为正数")
+	}
+	if ur.ApplicantID <= 0 {
+		return NewDomainError("申请人ID必须为正数")
+	}
+	if len(ur.ApplicantName) < 1 || len(ur.ApplicantName) > 100 {
+		return NewDomainError("申请人名称长度必须在1-100字符之间")
+	}
+	if ur.ApplicantLevel <= 0 {
+		return NewDomainError("申请人等级必须为正数")
+	}
+	if ur.ChairpersonID <= 0 {
+		return NewDomainError("会长ID必须为正数")
+	}
+	if ur.RequestStatus < 1 || ur.RequestStatus > 3 {
+		return NewDomainError("申请状态必须在1-3之间")
+	}
+	return nil
+}
+
+// GetStatusName returns the status name based on status ID
+func (ur *UnionRequest) GetStatusName() string {
+	switch ur.RequestStatus {
+	case 1:
+		return "待处理"
+	case 2:
+		return "已通过"
+	case 3:
+		return "已拒绝"
+	default:
+		return "未知状态"
+	}
+}
+
+// IsProcessed checks if the request has been processed
+func (ur *UnionRequest) IsProcessed() bool {
+	return ur.RequestStatus == 2 || ur.RequestStatus == 3
+}
+
+// UnionRole constants for member roles
+const (
+	UnionRoleMember    = 0 // 普通成员
+	UnionRoleViceLeader = 1 // 副会长
+	UnionRoleLeader    = 2 // 会长
+)
+
+// UnionRequestStatus constants for request status
+const (
+	UnionRequestStatusPending  = 1 // 待处理
+	UnionRequestStatusApproved = 2 // 已通过
+	UnionRequestStatusRejected = 3 // 已拒绝
+)
