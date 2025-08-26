@@ -58,6 +58,8 @@ func (h *UnionHandler) Handle(client *Client, message *valueobject.Message) *val
 		return h.handleTransferLeadership(client, message)
 	case valueobject.ActionGetUnionMembers:
 		return h.handleGetUnionMembers(client, message)
+	case valueobject.ActionSearchUnionMembers:
+		return h.handleSearchUnionMembers(client, message)
 	default:
 		return valueobject.NewErrorResponseWithUniqueID(message.Type, message.Action, valueobject.CodeInvalidRequest, "Unknown union action")
 	}
@@ -517,4 +519,21 @@ func (h *UnionHandler) handleGetUnionMembers(client *Client, message *valueobjec
 	}
 
 	return valueobject.NewSuccessResponseWithUniqueID(message.Type, message.Action, members)
+}
+
+// handleSearchUnionMembers handles searching union members by keyword
+func (h *UnionHandler) handleSearchUnionMembers(client *Client, message *valueobject.Message) *valueobject.Response {
+	// 注意：此接口无权限限制，任何人都可以搜索工会成员
+	var req dto.SearchUnionMembersRequest
+	if err := json.Unmarshal(message.Data, &req); err != nil {
+		return valueobject.NewErrorResponseWithUniqueID(message.Type, message.Action, valueobject.CodeInvalidRequest, "Invalid search union members data")
+	}
+
+	results, err := h.unionService.SearchUnionMembers(&req)
+	if err != nil {
+		log.Printf("Search union members error: %v", err)
+		return valueobject.NewErrorResponseWithUniqueID(message.Type, message.Action, valueobject.CodeValidationError, err.Error())
+	}
+
+	return valueobject.NewSuccessResponseWithUniqueID(message.Type, message.Action, results)
 }

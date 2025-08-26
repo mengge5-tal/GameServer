@@ -255,3 +255,68 @@ func (r *mysqlUnionMemberRepository) GetMembersByUnionIDWithPagination(unionID, 
 
 	return members, total, nil
 }
+
+// SearchMembersByUnionIDAndKeyword searches union members by union ID and keyword
+func (r *mysqlUnionMemberRepository) SearchMembersByUnionIDAndKeyword(unionID int, keyword string, page, limit int) ([]*entity.UnionMember, int, error) {
+	// 计算偏移量
+	offset := (page - 1) * limit
+	
+	// 构建搜索条件
+	searchPattern := "%" + keyword + "%"
+	
+	// 首先获取搜索结果总数
+	countQuery := `SELECT COUNT(*)
+			      FROM unionmembers um
+			      LEFT JOIN user u ON um.memberid = u.userid
+			      WHERE um.unionid = ? AND u.username LIKE ?`
+	
+	var total int
+	err := r.db.QueryRow(countQuery, unionID, searchPattern).Scan(&total)
+	if err != nil {
+		return nil, 0, fmt.Errorf("获取搜索结果总数失败: %w", err)
+	}
+	
+	// 获取搜索结果数据
+	query := `SELECT um.id, um.unionid, um.unionname, um.memberid, um.memberlevel, 
+	                 um.joined_time, um.roleid, u.username, COALESCE(p.experience, 0) as experience
+			  FROM unionmembers um
+			  LEFT JOIN user u ON um.memberid = u.userid
+			  LEFT JOIN playerinfo p ON u.userid = p.userid
+			  WHERE um.unionid = ? AND u.username LIKE ?
+			  ORDER BY um.roleid DESC, um.joined_time ASC
+			  LIMIT ? OFFSET ?`
+	
+	rows, err := r.db.Query(query, unionID, searchPattern, limit, offset)
+	if err != nil {
+		return nil, 0, fmt.Errorf("搜索工会成员失败: %w", err)
+	}
+	defer rows.Close()
+	
+	var members []*entity.UnionMember
+	for rows.Next() {
+		member := &entity.UnionMember{}
+		var username sql.NullString
+		var userExp sql.NullInt64
+		
+		err := rows.Scan(&member.ID, &member.UnionID, &member.UnionName,
+			&member.MemberID, &member.MemberLevel, &member.JoinedTime, &member.RoleID,
+			&username, &userExp)
+		if err != nil {
+			return nil, 0, fmt.Errorf("扫描搜索结果数据失败: %w", err)
+		}
+		
+		// 设置用户名和经验值等信息
+		if username.Valid {
+			member.MemberName = username.String
+		}
+		if userExp.Valid {
+			member.UserExperience = int(userExp.Int64)
+		}
+		// 设置默认的最后登录时间为空字符串
+		member.LastLogin = ""
+		
+		members = append(members, member)
+	}
+	
+	return members, total, nil
+}

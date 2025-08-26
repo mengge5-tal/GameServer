@@ -224,3 +224,21 @@ type UnionMemberListResponse struct {
 	Limit      int                   `json:"limit"`
 	TotalPages int                   `json:"total_pages"`
 }
+
+// SearchUnionMembersRequest represents a request to search union members
+type SearchUnionMembersRequest struct {
+	UnionID  int    `json:"union_id"`
+	Keyword  string `json:"keyword"`  // 搜索关键字（用户名）
+	Page     int    `json:"page,omitempty"`    // 页码，默认为1
+	Limit    int    `json:"limit,omitempty"`   // 每页数量，默认为10
+}
+
+// SearchUnionMembersResponse represents search results for union members
+type SearchUnionMembersResponse struct {
+	Members    []UnionMemberResponse `json:"members"`
+	Total      int                   `json:"total"`
+	Page       int                   `json:"page"`
+	Limit      int                   `json:"limit"`
+	TotalPages int                   `json:"total_pages"`
+	Keyword    string                `json:"keyword"`
+}

@@ -128,4 +128,5 @@ type UnionServiceInterface interface {
 	KickMember(req *dto.KickMemberRequest) error
 	TransferLeadership(req *dto.TransferLeadershipRequest) error
 	GetUnionMembers(req *dto.GetUnionMembersRequest) (*dto.UnionMemberListResponse, error)
+	SearchUnionMembers(req *dto.SearchUnionMembersRequest) (*dto.SearchUnionMembersResponse, error)
 }

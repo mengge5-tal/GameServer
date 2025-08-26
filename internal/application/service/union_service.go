@@ -1203,6 +1203,78 @@ func (s *UnionService) GetUnionMembers(req *dto.GetUnionMembersRequest) (*dto.Un
 	}, nil
 }
 
+// SearchUnionMembers searches union members by keyword
+func (s *UnionService) SearchUnionMembers(req *dto.SearchUnionMembersRequest) (*dto.SearchUnionMembersResponse, error) {
+	// Validate union ID
+	if req.UnionID <= 0 {
+		return nil, fmt.Errorf("工会ID无效")
+	}
+
+	// Validate keyword
+	if len(req.Keyword) == 0 {
+		return nil, fmt.Errorf("搜索关键字不能为空")
+	}
+
+	// Set default pagination values
+	page := req.Page
+	if page <= 0 {
+		page = 1
+	}
+	limit := req.Limit
+	if limit <= 0 || limit > 50 {
+		limit = 10 // 搜索结果默认每页10条，最多50条
+	}
+
+	// Verify union exists
+	union, err := s.unionRepo.GetByID(req.UnionID)
+	if err != nil {
+		return nil, fmt.Errorf("获取工会信息失败: %w", err)
+	}
+	if union == nil {
+		return nil, fmt.Errorf("工会不存在")
+	}
+
+	// Search union members with pagination
+	members, total, err := s.memberRepo.SearchMembersByUnionIDAndKeyword(req.UnionID, req.Keyword, page, limit)
+	if err != nil {
+		return nil, fmt.Errorf("搜索工会成员失败: %w", err)
+	}
+
+	// Convert to response format
+	memberResponses := make([]dto.UnionMemberResponse, 0, len(members))
+	for _, member := range members {
+		// Get user online status (you can implement this based on your online user tracking)
+		isOnline := false // TODO: Implement online status check
+		
+		// Determine role name
+		roleName := getRoleName(member.RoleID)
+		
+		memberResponses = append(memberResponses, dto.UnionMemberResponse{
+			UserID:       member.MemberID,
+			Username:     member.MemberName,
+			Level:        member.MemberLevel,
+			RoleID:       member.RoleID,
+			RoleName:     roleName,
+			JoinTime:     member.JoinedTime.Format("2006-01-02 15:04:05"),
+			LastLogin:    member.LastLogin,
+			Experience:   member.UserExperience,
+			IsOnline:     isOnline,
+		})
+	}
+
+	// Calculate total pages
+	totalPages := (total + limit - 1) / limit
+
+	return &dto.SearchUnionMembersResponse{
+		Members:    memberResponses,
+		Total:      total,
+		Page:       page,
+		Limit:      limit,
+		TotalPages: totalPages,
+		Keyword:    req.Keyword,
+	}, nil
+}
+
 // getRoleName converts role ID to role name
 func getRoleName(roleID int) string {
 	switch roleID {
