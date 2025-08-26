@@ -133,6 +133,11 @@ const (
 	ActionInviteToUnion        MessageAction = "inviteToUnion"
 	ActionGetUnionInvites      MessageAction = "getUnionInvites"
 	ActionProcessUnionInvite   MessageAction = "processUnionInvite"
+	ActionPromoteMember        MessageAction = "promoteMember"
+	ActionDemoteMember         MessageAction = "demoteMember"
+	ActionKickMember           MessageAction = "kickMember"
+	ActionTransferLeadership   MessageAction = "transferLeadership"
+	ActionGetUnionMembers      MessageAction = "getUnionMembers"
 )
 
 // Message represents a WebSocket message

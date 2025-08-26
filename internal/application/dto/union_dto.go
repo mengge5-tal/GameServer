@@ -86,20 +86,6 @@ type LeaveUnionRequest struct {
 	MemberID int `json:"memberid"`
 }
 
-// KickMemberRequest represents a request to kick a member from union
-type KickMemberRequest struct {
-	UnionID       int `json:"unionid"`
-	MemberID      int `json:"memberid"`
-	ChairpersonID int `json:"chairpersonid"`
-}
-
-// PromoteMemberRequest represents a request to promote a member
-type PromoteMemberRequest struct {
-	UnionID       int `json:"unionid"`
-	MemberID      int `json:"memberid"`
-	NewRoleID     int `json:"new_role_id"`
-	ChairpersonID int `json:"chairpersonid"`
-}
 
 // DismissUnionRequest represents a request to dismiss/dissolve a union
 type DismissUnionRequest struct {
@@ -184,4 +170,57 @@ type UnionInviteNotification struct {
 	UnionLevel        int    `json:"union_level"`
 	CreateTime        string `json:"create_time"`
 	Message           string `json:"message"`
+}
+
+// PromoteMemberRequest represents a request to promote a member to vice leader
+type PromoteMemberRequest struct {
+	MemberUserID int `json:"member_user_id"`
+	LeaderID     int `json:"leader_id"`
+}
+
+// DemoteMemberRequest represents a request to demote a member from vice leader
+type DemoteMemberRequest struct {
+	MemberUserID int `json:"member_user_id"`
+	LeaderID     int `json:"leader_id"`
+}
+
+// KickMemberRequest represents a request to kick a member from union
+type KickMemberRequest struct {
+	MemberUserID int `json:"member_user_id"`
+	KickerID     int `json:"kicker_id"`
+}
+
+// TransferLeadershipRequest represents a request to transfer leadership
+type TransferLeadershipRequest struct {
+	NewLeaderUserID int `json:"new_leader_user_id"`
+	CurrentLeaderID int `json:"current_leader_id"`
+}
+
+// GetUnionMembersRequest represents a request to get union members
+type GetUnionMembersRequest struct {
+	UnionID int `json:"union_id"`
+	Page    int `json:"page,omitempty"`    // 页码，默认为1
+	Limit   int `json:"limit,omitempty"`   // 每页数量，默认为20
+}
+
+// UnionMemberResponse represents union member information
+type UnionMemberResponse struct {
+	UserID       int    `json:"user_id"`
+	Username     string `json:"username"`
+	Level        int    `json:"level"`
+	RoleID       int    `json:"role_id"`
+	RoleName     string `json:"role_name"`     // leader, vice_leader, member
+	JoinTime     string `json:"join_time"`
+	LastLogin    string `json:"last_login"`
+	Experience   int    `json:"experience"`
+	IsOnline     bool   `json:"is_online"`
+}
+
+// UnionMemberListResponse represents a list of union members
+type UnionMemberListResponse struct {
+	Members    []UnionMemberResponse `json:"members"`
+	Total      int                   `json:"total"`
+	Page       int                   `json:"page"`
+	Limit      int                   `json:"limit"`
+	TotalPages int                   `json:"total_pages"`
 }

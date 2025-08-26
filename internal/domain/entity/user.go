@@ -254,13 +254,16 @@ func (u *Union) Validate() error {
 
 // UnionMember represents a union member entity
 type UnionMember struct {
-	ID          int       `json:"id"`
-	UnionID     int       `json:"unionid"`
-	UnionName   string    `json:"unionname"`
-	MemberID    int       `json:"memberid"`
-	MemberLevel int       `json:"memberlevel"`
-	JoinedTime  time.Time `json:"joined_time"`
-	RoleID      int       `json:"roleid"` // 0=普通成员, 1=副会长, 2=会长
+	ID             int       `json:"id"`
+	UnionID        int       `json:"unionid"`
+	UnionName      string    `json:"unionname"`
+	MemberID       int       `json:"memberid"`
+	MemberLevel    int       `json:"memberlevel"`
+	JoinedTime     time.Time `json:"joined_time"`
+	RoleID         int       `json:"roleid"` // 0=普通成员, 1=副会长, 2=会长
+	MemberName     string    `json:"member_name,omitempty"`     // 成员用户名
+	UserExperience int       `json:"user_experience,omitempty"` // 成员经验值
+	LastLogin      string    `json:"last_login,omitempty"`      // 最后登录时间
 }
 
 // Validate validates union member data

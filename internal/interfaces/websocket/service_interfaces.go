@@ -123,4 +123,9 @@ type UnionServiceInterface interface {
 	InviteToUnion(req *dto.InviteToUnionRequest) error
 	GetUnionInvites(req *dto.GetUnionInvitesRequest) (*dto.UnionInviteListResponse, error)
 	ProcessUnionInvite(req *dto.ProcessUnionInviteRequest) error
+	PromoteMember(req *dto.PromoteMemberRequest) error
+	DemoteMember(req *dto.DemoteMemberRequest) error
+	KickMember(req *dto.KickMemberRequest) error
+	TransferLeadership(req *dto.TransferLeadershipRequest) error
+	GetUnionMembers(req *dto.GetUnionMembersRequest) (*dto.UnionMemberListResponse, error)
 }

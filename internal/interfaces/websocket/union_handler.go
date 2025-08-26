@@ -48,6 +48,16 @@ func (h *UnionHandler) Handle(client *Client, message *valueobject.Message) *val
 		return h.handleGetUnionInvites(client, message)
 	case valueobject.ActionProcessUnionInvite:
 		return h.handleProcessUnionInvite(client, message)
+	case valueobject.ActionPromoteMember:
+		return h.handlePromoteMember(client, message)
+	case valueobject.ActionDemoteMember:
+		return h.handleDemoteMember(client, message)
+	case valueobject.ActionKickMember:
+		return h.handleKickMember(client, message)
+	case valueobject.ActionTransferLeadership:
+		return h.handleTransferLeadership(client, message)
+	case valueobject.ActionGetUnionMembers:
+		return h.handleGetUnionMembers(client, message)
 	default:
 		return valueobject.NewErrorResponseWithUniqueID(message.Type, message.Action, valueobject.CodeInvalidRequest, "Unknown union action")
 	}
@@ -386,4 +396,125 @@ func (h *UnionHandler) handleProcessUnionInvite(client *Client, message *valueob
 	return valueobject.NewSuccessResponseWithUniqueID(message.Type, message.Action, map[string]interface{}{
 		"message": "工会邀请处理成功：" + statusText,
 	})
+}
+
+// handlePromoteMember handles promoting a member to vice leader
+func (h *UnionHandler) handlePromoteMember(client *Client, message *valueobject.Message) *valueobject.Response {
+	userID := client.GetUserID()
+	if userID == 0 {
+		return valueobject.NewErrorResponseWithUniqueID(message.Type, message.Action, valueobject.CodeUnauthorized, "User not authenticated")
+	}
+
+	var req dto.PromoteMemberRequest
+	if err := json.Unmarshal(message.Data, &req); err != nil {
+		return valueobject.NewErrorResponseWithUniqueID(message.Type, message.Action, valueobject.CodeInvalidRequest, "Invalid promote member data")
+	}
+
+	// Set leader ID from authenticated user
+	req.LeaderID = userID
+
+	err := h.unionService.PromoteMember(&req)
+	if err != nil {
+		log.Printf("Promote member error: %v", err)
+		return valueobject.NewErrorResponseWithUniqueID(message.Type, message.Action, valueobject.CodeValidationError, err.Error())
+	}
+
+	return valueobject.NewSuccessResponseWithUniqueID(message.Type, message.Action, map[string]interface{}{
+		"message": "成员提升为副会长成功",
+	})
+}
+
+// handleDemoteMember handles demoting a vice leader to regular member
+func (h *UnionHandler) handleDemoteMember(client *Client, message *valueobject.Message) *valueobject.Response {
+	userID := client.GetUserID()
+	if userID == 0 {
+		return valueobject.NewErrorResponseWithUniqueID(message.Type, message.Action, valueobject.CodeUnauthorized, "User not authenticated")
+	}
+
+	var req dto.DemoteMemberRequest
+	if err := json.Unmarshal(message.Data, &req); err != nil {
+		return valueobject.NewErrorResponseWithUniqueID(message.Type, message.Action, valueobject.CodeInvalidRequest, "Invalid demote member data")
+	}
+
+	// Set leader ID from authenticated user
+	req.LeaderID = userID
+
+	err := h.unionService.DemoteMember(&req)
+	if err != nil {
+		log.Printf("Demote member error: %v", err)
+		return valueobject.NewErrorResponseWithUniqueID(message.Type, message.Action, valueobject.CodeValidationError, err.Error())
+	}
+
+	return valueobject.NewSuccessResponseWithUniqueID(message.Type, message.Action, map[string]interface{}{
+		"message": "副会长降级为普通成员成功",
+	})
+}
+
+// handleKickMember handles kicking a member from the union
+func (h *UnionHandler) handleKickMember(client *Client, message *valueobject.Message) *valueobject.Response {
+	userID := client.GetUserID()
+	if userID == 0 {
+		return valueobject.NewErrorResponseWithUniqueID(message.Type, message.Action, valueobject.CodeUnauthorized, "User not authenticated")
+	}
+
+	var req dto.KickMemberRequest
+	if err := json.Unmarshal(message.Data, &req); err != nil {
+		return valueobject.NewErrorResponseWithUniqueID(message.Type, message.Action, valueobject.CodeInvalidRequest, "Invalid kick member data")
+	}
+
+	// Set kicker ID from authenticated user
+	req.KickerID = userID
+
+	err := h.unionService.KickMember(&req)
+	if err != nil {
+		log.Printf("Kick member error: %v", err)
+		return valueobject.NewErrorResponseWithUniqueID(message.Type, message.Action, valueobject.CodeValidationError, err.Error())
+	}
+
+	return valueobject.NewSuccessResponseWithUniqueID(message.Type, message.Action, map[string]interface{}{
+		"message": "踢出成员成功",
+	})
+}
+
+// handleTransferLeadership handles transferring leadership to another member
+func (h *UnionHandler) handleTransferLeadership(client *Client, message *valueobject.Message) *valueobject.Response {
+	userID := client.GetUserID()
+	if userID == 0 {
+		return valueobject.NewErrorResponseWithUniqueID(message.Type, message.Action, valueobject.CodeUnauthorized, "User not authenticated")
+	}
+
+	var req dto.TransferLeadershipRequest
+	if err := json.Unmarshal(message.Data, &req); err != nil {
+		return valueobject.NewErrorResponseWithUniqueID(message.Type, message.Action, valueobject.CodeInvalidRequest, "Invalid transfer leadership data")
+	}
+
+	// Set current leader ID from authenticated user
+	req.CurrentLeaderID = userID
+
+	err := h.unionService.TransferLeadership(&req)
+	if err != nil {
+		log.Printf("Transfer leadership error: %v", err)
+		return valueobject.NewErrorResponseWithUniqueID(message.Type, message.Action, valueobject.CodeValidationError, err.Error())
+	}
+
+	return valueobject.NewSuccessResponseWithUniqueID(message.Type, message.Action, map[string]interface{}{
+		"message": "会长职位转让成功",
+	})
+}
+
+// handleGetUnionMembers handles getting union member list
+func (h *UnionHandler) handleGetUnionMembers(client *Client, message *valueobject.Message) *valueobject.Response {
+	// 注意：此接口无权限限制，任何人都可以查看工会成员列表
+	var req dto.GetUnionMembersRequest
+	if err := json.Unmarshal(message.Data, &req); err != nil {
+		return valueobject.NewErrorResponseWithUniqueID(message.Type, message.Action, valueobject.CodeInvalidRequest, "Invalid get union members data")
+	}
+
+	members, err := h.unionService.GetUnionMembers(&req)
+	if err != nil {
+		log.Printf("Get union members error: %v", err)
+		return valueobject.NewErrorResponseWithUniqueID(message.Type, message.Action, valueobject.CodeValidationError, err.Error())
+	}
+
+	return valueobject.NewSuccessResponseWithUniqueID(message.Type, message.Action, members)
 }

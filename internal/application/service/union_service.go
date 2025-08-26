@@ -890,3 +890,329 @@ func (s *UnionService) ProcessUnionInvite(req *dto.ProcessUnionInviteRequest) er
 
 	return nil
 }
+
+// PromoteMember promotes a member to vice leader
+func (s *UnionService) PromoteMember(req *dto.PromoteMemberRequest) error {
+	// Get leader's union membership and verify permissions
+	leaderMember, err := s.memberRepo.GetByUserID(req.LeaderID)
+	if err != nil {
+		return fmt.Errorf("获取会长信息失败: %w", err)
+	}
+
+	if leaderMember == nil || leaderMember.RoleID != entity.UnionRoleLeader {
+		return fmt.Errorf("只有会长才能提升成员权限")
+	}
+
+	// Get member to be promoted
+	member, err := s.memberRepo.GetByUserID(req.MemberUserID)
+	if err != nil {
+		return fmt.Errorf("获取成员信息失败: %w", err)
+	}
+
+	if member == nil {
+		return fmt.Errorf("成员不存在")
+	}
+
+	// Check if they are in the same union
+	if member.UnionID != leaderMember.UnionID {
+		return fmt.Errorf("只能提升本工会成员")
+	}
+
+	// Check current role
+	if member.RoleID != entity.UnionRoleMember {
+		return fmt.Errorf("该成员已经是副会长或会长")
+	}
+
+	// Update role to vice leader
+	err = s.memberRepo.UpdateRole(req.MemberUserID, member.UnionID, entity.UnionRoleViceLeader)
+	if err != nil {
+		return fmt.Errorf("提升成员权限失败: %w", err)
+	}
+
+	// Clear cache
+	s.cacheService.Delete(fmt.Sprintf("user_union:%d", req.MemberUserID))
+
+	return nil
+}
+
+// DemoteMember demotes a vice leader to regular member
+func (s *UnionService) DemoteMember(req *dto.DemoteMemberRequest) error {
+	// Get leader's union membership and verify permissions
+	leaderMember, err := s.memberRepo.GetByUserID(req.LeaderID)
+	if err != nil {
+		return fmt.Errorf("获取会长信息失败: %w", err)
+	}
+
+	if leaderMember == nil || leaderMember.RoleID != entity.UnionRoleLeader {
+		return fmt.Errorf("只有会长才能降级成员权限")
+	}
+
+	// Get member to be demoted
+	member, err := s.memberRepo.GetByUserID(req.MemberUserID)
+	if err != nil {
+		return fmt.Errorf("获取成员信息失败: %w", err)
+	}
+
+	if member == nil {
+		return fmt.Errorf("成员不存在")
+	}
+
+	// Check if they are in the same union
+	if member.UnionID != leaderMember.UnionID {
+		return fmt.Errorf("只能降级本工会成员")
+	}
+
+	// Check current role
+	if member.RoleID != entity.UnionRoleViceLeader {
+		return fmt.Errorf("该成员不是副会长")
+	}
+
+	// Update role to regular member
+	err = s.memberRepo.UpdateRole(req.MemberUserID, member.UnionID, entity.UnionRoleMember)
+	if err != nil {
+		return fmt.Errorf("降级成员权限失败: %w", err)
+	}
+
+	// Clear cache
+	s.cacheService.Delete(fmt.Sprintf("user_union:%d", req.MemberUserID))
+
+	return nil
+}
+
+// KickMember kicks a member from the union
+func (s *UnionService) KickMember(req *dto.KickMemberRequest) error {
+	// Get kicker's union membership and verify permissions
+	kickerMember, err := s.memberRepo.GetByUserID(req.KickerID)
+	if err != nil {
+		return fmt.Errorf("获取操作者信息失败: %w", err)
+	}
+
+	if kickerMember == nil {
+		return fmt.Errorf("操作者不在任何工会中")
+	}
+
+	// Check permissions: leader and vice leader can kick regular members, leader can kick vice leaders
+	if kickerMember.RoleID != entity.UnionRoleLeader && kickerMember.RoleID != entity.UnionRoleViceLeader {
+		return fmt.Errorf("只有会长和副会长才能踢出成员")
+	}
+
+	// Get member to be kicked
+	member, err := s.memberRepo.GetByUserID(req.MemberUserID)
+	if err != nil {
+		return fmt.Errorf("获取被踢出成员信息失败: %w", err)
+	}
+
+	if member == nil {
+		return fmt.Errorf("被踢出成员不存在")
+	}
+
+	// Check if they are in the same union
+	if member.UnionID != kickerMember.UnionID {
+		return fmt.Errorf("只能踢出本工会成员")
+	}
+
+	// Check role permissions
+	if member.RoleID == entity.UnionRoleLeader {
+		return fmt.Errorf("不能踢出会长")
+	}
+
+	if member.RoleID == entity.UnionRoleViceLeader && kickerMember.RoleID != entity.UnionRoleLeader {
+		return fmt.Errorf("只有会长才能踢出副会长")
+	}
+
+	// Cannot kick yourself
+	if req.MemberUserID == req.KickerID {
+		return fmt.Errorf("不能踢出自己")
+	}
+
+	// Remove member from union
+	err = s.memberRepo.DeleteByUserID(req.MemberUserID)
+	if err != nil {
+		return fmt.Errorf("踢出成员失败: %w", err)
+	}
+
+	// Update union member count
+	err = s.unionRepo.DecrementMemberCount(member.UnionID)
+	if err != nil {
+		// This is not critical, log but don't fail
+		fmt.Printf("Warning: Failed to update union member count: %v", err)
+	}
+
+	// Clear cache
+	s.cacheService.Delete(fmt.Sprintf("user_union:%d", req.MemberUserID))
+
+	return nil
+}
+
+// TransferLeadership transfers leadership to another member
+func (s *UnionService) TransferLeadership(req *dto.TransferLeadershipRequest) error {
+	// Get current leader's union membership and verify permissions
+	currentLeader, err := s.memberRepo.GetByUserID(req.CurrentLeaderID)
+	if err != nil {
+		return fmt.Errorf("获取当前会长信息失败: %w", err)
+	}
+
+	if currentLeader == nil || currentLeader.RoleID != entity.UnionRoleLeader {
+		return fmt.Errorf("只有会长才能转让会长职位")
+	}
+
+	// Get new leader
+	newLeader, err := s.memberRepo.GetByUserID(req.NewLeaderUserID)
+	if err != nil {
+		return fmt.Errorf("获取新会长信息失败: %w", err)
+	}
+
+	if newLeader == nil {
+		return fmt.Errorf("新会长不存在")
+	}
+
+	// Check if they are in the same union
+	if newLeader.UnionID != currentLeader.UnionID {
+		return fmt.Errorf("只能将会长职位转让给本工会成员")
+	}
+
+	// Cannot transfer to yourself
+	if req.NewLeaderUserID == req.CurrentLeaderID {
+		return fmt.Errorf("不能将会长职位转让给自己")
+	}
+
+	// Determine current leader's new role based on new leader's current role
+	var currentLeaderNewRole int
+	if newLeader.RoleID == entity.UnionRoleViceLeader {
+		currentLeaderNewRole = entity.UnionRoleViceLeader
+	} else {
+		currentLeaderNewRole = entity.UnionRoleMember
+	}
+
+	// Update new leader to leader role
+	err = s.memberRepo.UpdateRole(req.NewLeaderUserID, newLeader.UnionID, entity.UnionRoleLeader)
+	if err != nil {
+		return fmt.Errorf("提升新会长失败: %w", err)
+	}
+
+	// Update current leader to new role
+	err = s.memberRepo.UpdateRole(req.CurrentLeaderID, currentLeader.UnionID, currentLeaderNewRole)
+	if err != nil {
+		// Rollback new leader promotion
+		s.memberRepo.UpdateRole(req.NewLeaderUserID, newLeader.UnionID, newLeader.RoleID)
+		return fmt.Errorf("降级当前会长失败: %w", err)
+	}
+
+	// Get union info and update chairperson information
+	union, err := s.unionRepo.GetByID(currentLeader.UnionID)
+	if err != nil {
+		// Log error but don't rollback as the role transfer is already complete
+		fmt.Printf("Warning: Failed to get union info for leadership transfer: %v", err)
+		return nil
+	}
+
+	// Get new leader's user info
+	newLeaderUser, err := s.userRepo.GetByID(req.NewLeaderUserID)
+	if err != nil {
+		fmt.Printf("Warning: Failed to get new leader user info: %v", err)
+		return nil
+	}
+
+	// Get new leader's player info for level
+	newLeaderPlayer, err := s.playerRepo.GetByUserID(req.NewLeaderUserID)
+	if err != nil {
+		fmt.Printf("Warning: Failed to get new leader player info: %v", err)
+		return nil
+	}
+
+	// Update union chairperson info
+	union.ChairpersonID = req.NewLeaderUserID
+	union.ChairpersonName = newLeaderUser.Username
+	union.ChairpersonLevel = newLeaderPlayer.Level
+
+	err = s.unionRepo.Update(union)
+	if err != nil {
+		fmt.Printf("Warning: Failed to update union chairperson info: %v", err)
+	}
+
+	// Clear cache for both users
+	s.cacheService.Delete(fmt.Sprintf("user_union:%d", req.CurrentLeaderID))
+	s.cacheService.Delete(fmt.Sprintf("user_union:%d", req.NewLeaderUserID))
+
+	return nil
+}
+
+// GetUnionMembers gets union member list with pagination
+func (s *UnionService) GetUnionMembers(req *dto.GetUnionMembersRequest) (*dto.UnionMemberListResponse, error) {
+	// Validate union ID
+	if req.UnionID <= 0 {
+		return nil, fmt.Errorf("工会ID无效")
+	}
+
+	// Set default pagination values
+	page := req.Page
+	if page <= 0 {
+		page = 1
+	}
+	limit := req.Limit
+	if limit <= 0 || limit > 100 {
+		limit = 20
+	}
+
+	// Verify union exists
+	union, err := s.unionRepo.GetByID(req.UnionID)
+	if err != nil {
+		return nil, fmt.Errorf("获取工会信息失败: %w", err)
+	}
+	if union == nil {
+		return nil, fmt.Errorf("工会不存在")
+	}
+
+	// Get union members with pagination
+	members, total, err := s.memberRepo.GetMembersByUnionIDWithPagination(req.UnionID, page, limit)
+	if err != nil {
+		return nil, fmt.Errorf("获取工会成员列表失败: %w", err)
+	}
+
+	// Convert to response format
+	memberResponses := make([]dto.UnionMemberResponse, 0, len(members))
+	for _, member := range members {
+		// Get user online status (you can implement this based on your online user tracking)
+		isOnline := false // TODO: Implement online status check
+		
+		// Determine role name
+		roleName := getRoleName(member.RoleID)
+		
+		memberResponses = append(memberResponses, dto.UnionMemberResponse{
+			UserID:       member.MemberID,
+			Username:     member.MemberName,
+			Level:        member.MemberLevel,
+			RoleID:       member.RoleID,
+			RoleName:     roleName,
+			JoinTime:     member.JoinedTime.Format("2006-01-02 15:04:05"),
+			LastLogin:    member.LastLogin,
+			Experience:   member.UserExperience,
+			IsOnline:     isOnline,
+		})
+	}
+
+	// Calculate total pages
+	totalPages := (total + limit - 1) / limit
+
+	return &dto.UnionMemberListResponse{
+		Members:    memberResponses,
+		Total:      total,
+		Page:       page,
+		Limit:      limit,
+		TotalPages: totalPages,
+	}, nil
+}
+
+// getRoleName converts role ID to role name
+func getRoleName(roleID int) string {
+	switch roleID {
+	case entity.UnionRoleLeader:
+		return "leader"
+	case entity.UnionRoleViceLeader:
+		return "vice_leader"
+	case entity.UnionRoleMember:
+		return "member"
+	default:
+		return "member"
+	}
+}

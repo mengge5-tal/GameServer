@@ -47,6 +47,7 @@ type UnionMemberRepository interface {
 	// Member management
 	UpdateRole(userID, unionID, roleID int) error
 	GetMemberCount(unionID int) (int, error)
+	GetMembersByUnionIDWithPagination(unionID, page, limit int) ([]*entity.UnionMember, int, error)
 }
 
 // UnionRequestRepository defines the interface for union request data access
