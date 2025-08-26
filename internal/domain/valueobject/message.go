@@ -139,6 +139,7 @@ const (
 	ActionTransferLeadership   MessageAction = "transferLeadership"
 	ActionGetUnionMembers      MessageAction = "getUnionMembers"
 	ActionSearchUnionMembers   MessageAction = "searchUnionMembers"
+	ActionUpdateUnionInfo      MessageAction = "updateUnionInfo"
 )
 
 // Message represents a WebSocket message

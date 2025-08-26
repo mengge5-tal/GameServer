@@ -242,3 +242,10 @@ type SearchUnionMembersResponse struct {
 	TotalPages int                   `json:"total_pages"`
 	Keyword    string                `json:"keyword"`
 }
+
+// UpdateUnionInfoRequest represents a request to update union information (chairman only)
+type UpdateUnionInfoRequest struct {
+	UnionName     string `json:"union_name"`             // 新工会名称
+	Description   string `json:"description"`            // 新工会简介  
+	ChairpersonID int    `json:"chairperson_id,omitempty"` // 会长ID（由系统设置）
+}

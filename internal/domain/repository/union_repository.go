@@ -26,6 +26,9 @@ type UnionRepository interface {
 	UpdateLevel(unionID, level int) error
 	IncrementMemberCount(unionID int) error
 	DecrementMemberCount(unionID int) error
+	
+	// Union information updates
+	UpdateUnionInfo(unionID int, unionName, description string) error
 }
 
 // UnionMemberRepository defines the interface for union member data access

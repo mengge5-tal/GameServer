@@ -60,6 +60,8 @@ func (h *UnionHandler) Handle(client *Client, message *valueobject.Message) *val
 		return h.handleGetUnionMembers(client, message)
 	case valueobject.ActionSearchUnionMembers:
 		return h.handleSearchUnionMembers(client, message)
+	case valueobject.ActionUpdateUnionInfo:
+		return h.handleUpdateUnionInfo(client, message)
 	default:
 		return valueobject.NewErrorResponseWithUniqueID(message.Type, message.Action, valueobject.CodeInvalidRequest, "Unknown union action")
 	}
@@ -536,4 +538,28 @@ func (h *UnionHandler) handleSearchUnionMembers(client *Client, message *valueob
 	}
 
 	return valueobject.NewSuccessResponseWithUniqueID(message.Type, message.Action, results)
+}
+
+// handleUpdateUnionInfo handles updating union information (chairman only)
+func (h *UnionHandler) handleUpdateUnionInfo(client *Client, message *valueobject.Message) *valueobject.Response {
+	userID := client.GetUserID()
+	if userID == 0 {
+		return valueobject.NewErrorResponseWithUniqueID(message.Type, message.Action, valueobject.CodeUnauthorized, "User not authenticated")
+	}
+
+	var req dto.UpdateUnionInfoRequest
+	if err := json.Unmarshal(message.Data, &req); err != nil {
+		return valueobject.NewErrorResponseWithUniqueID(message.Type, message.Action, valueobject.CodeInvalidRequest, "Invalid update union info data")
+	}
+
+	// Set chairperson ID from authenticated user
+	req.ChairpersonID = userID
+
+	updatedUnion, err := h.unionService.UpdateUnionInfo(&req)
+	if err != nil {
+		log.Printf("Update union info error: %v", err)
+		return valueobject.NewErrorResponseWithUniqueID(message.Type, message.Action, valueobject.CodeValidationError, err.Error())
+	}
+
+	return valueobject.NewSuccessResponseWithUniqueID(message.Type, message.Action, updatedUnion)
 }

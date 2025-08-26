@@ -283,3 +283,23 @@ func (r *mysqlUnionRepository) DecrementMemberCount(unionID int) error {
 	}
 	return nil
 }
+
+// UpdateUnionInfo updates union name and description (chairman only)
+func (r *mysqlUnionRepository) UpdateUnionInfo(unionID int, unionName, description string) error {
+	query := "UPDATE `union` SET unionname = ?, union_desc = ? WHERE unionid = ?"
+	result, err := r.db.Exec(query, unionName, description, unionID)
+	if err != nil {
+		return fmt.Errorf("更新工会信息失败: %w", err)
+	}
+	
+	rowsAffected, err := result.RowsAffected()
+	if err != nil {
+		return fmt.Errorf("检查更新结果失败: %w", err)
+	}
+	
+	if rowsAffected == 0 {
+		return fmt.Errorf("工会不存在或无权限修改")
+	}
+	
+	return nil
+}

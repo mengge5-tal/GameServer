@@ -1275,6 +1275,106 @@ func (s *UnionService) SearchUnionMembers(req *dto.SearchUnionMembersRequest) (*
 	}, nil
 }
 
+// UpdateUnionInfo updates union information (chairman only)
+func (s *UnionService) UpdateUnionInfo(req *dto.UpdateUnionInfoRequest) (*dto.UnionResponse, error) {
+	// Validate input
+	if req.ChairpersonID <= 0 {
+		return nil, fmt.Errorf("会长ID无效")
+	}
+	
+	// Validate union name
+	if len(req.UnionName) < 2 || len(req.UnionName) > 20 {
+		return nil, fmt.Errorf("工会名称长度必须在2-20个字符之间")
+	}
+	
+	// Validate description (optional but if provided should be reasonable length)
+	if len(req.Description) > 200 {
+		return nil, fmt.Errorf("工会简介长度不能超过200个字符")
+	}
+	
+	// Get current user's union membership
+	currentMember, err := s.memberRepo.GetByUserID(req.ChairpersonID)
+	if err != nil {
+		return nil, fmt.Errorf("获取用户工会信息失败: %w", err)
+	}
+	
+	if currentMember == nil {
+		return nil, fmt.Errorf("您不在任何工会中")
+	}
+	
+	// Check if user is the leader (chairman)
+	if currentMember.RoleID != entity.UnionRoleLeader {
+		return nil, fmt.Errorf("只有工会会长才能修改工会信息")
+	}
+	
+	// Check if new union name already exists (only if different from current)
+	currentUnion, err := s.unionRepo.GetByID(currentMember.UnionID)
+	if err != nil {
+		return nil, fmt.Errorf("获取当前工会信息失败: %w", err)
+	}
+	
+	if currentUnion == nil {
+		return nil, fmt.Errorf("工会不存在")
+	}
+	
+	// Only check name uniqueness if the name is being changed
+	if req.UnionName != currentUnion.UnionName {
+		exists, err := s.unionRepo.Exists(req.UnionName)
+		if err != nil {
+			return nil, fmt.Errorf("检查工会名称失败: %w", err)
+		}
+		if exists {
+			return nil, fmt.Errorf("工会名称已存在")
+		}
+	}
+	
+	// Update union information in database
+	err = s.unionRepo.UpdateUnionInfo(currentMember.UnionID, req.UnionName, req.Description)
+	if err != nil {
+		return nil, fmt.Errorf("更新工会信息失败: %w", err)
+	}
+	
+	// Update union member records with new union name if changed
+	if req.UnionName != currentUnion.UnionName {
+		// Get all union members to update their union name
+		allMembers, err := s.memberRepo.GetByUnionID(currentMember.UnionID)
+		if err != nil {
+			return nil, fmt.Errorf("获取工会成员列表失败: %w", err)
+		}
+		
+		// Update each member's union name
+		for _, member := range allMembers {
+			member.UnionName = req.UnionName
+			err = s.memberRepo.Update(member)
+			if err != nil {
+				return nil, fmt.Errorf("更新成员工会名称失败: %w", err)
+			}
+		}
+	}
+	
+	// Clear cache
+	s.cacheService.Delete(fmt.Sprintf("union:%d", currentMember.UnionID))
+	
+	// Get updated union information to return
+	updatedUnion, err := s.unionRepo.GetByID(currentMember.UnionID)
+	if err != nil {
+		return nil, fmt.Errorf("获取更新后的工会信息失败: %w", err)
+	}
+	
+	return &dto.UnionResponse{
+		UnionID:           updatedUnion.UnionID,
+		UnionName:         updatedUnion.UnionName,
+		ChairpersonID:     updatedUnion.ChairpersonID,
+		ChairpersonName:   updatedUnion.ChairpersonName,
+		ChairpersonLevel:  updatedUnion.ChairpersonLevel,
+		UnionLevel:        updatedUnion.UnionLevel,
+		UnionMembers:      updatedUnion.UnionMembers,
+		Experience:        updatedUnion.Experience,
+		CreatedTime:       updatedUnion.CreatedTime,
+		UnionDesc:         updatedUnion.UnionDesc,
+	}, nil
+}
+
 // getRoleName converts role ID to role name
 func getRoleName(roleID int) string {
 	switch roleID {
