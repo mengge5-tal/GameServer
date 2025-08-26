@@ -48,6 +48,7 @@ type Container struct {
 	UnionMemberRepo         repository.UnionMemberRepository
 	UnionRequestRepo        repository.UnionRequestRepository
 	UnionExperienceRepo     repository.UnionExperienceRepository
+	UnionInviteRepo         repository.UnionInviteRepository
 
 	// Domain Services
 	AuthDomainService domainService.AuthDomainService
@@ -91,6 +92,7 @@ func (c *Container) initializeRepositories() error {
 	c.UnionMemberRepo = infraRepo.NewMySQLUnionMemberRepository(c.Database)
 	c.UnionRequestRepo = infraRepo.NewMySQLUnionRequestRepository(c.Database)
 	c.UnionExperienceRepo = infraRepo.NewMySQLUnionExperienceRepository(c.Database)
+	c.UnionInviteRepo = infraRepo.NewMySQLUnionInviteRepository(c.Database)
 
 	return nil
 }
@@ -163,6 +165,7 @@ func (c *Container) initializeServices() error {
 		c.PlayerRepo,
 	)
 
+	// UnionService will be initialized later with NotificationService
 	c.UnionService = service.NewUnionService(
 		c.UnionRepo,
 		c.UnionMemberRepo,
@@ -171,6 +174,8 @@ func (c *Container) initializeServices() error {
 		c.PlayerRepo,
 		c.UserRepo,
 		c.CacheService,
+		nil, // Will be set later when we have the WebSocket hub
+		c.UnionInviteRepo,
 	)
 
 	return nil
@@ -204,6 +209,19 @@ func (c *Container) SetNotificationService(userNotifier service.UserNotifier) {
 		c.UserRepo,
 		c.PlayerRepo,
 		c.NotificationService,
+	)
+
+	// Recreate UnionService with notification support
+	c.UnionService = service.NewUnionService(
+		c.UnionRepo,
+		c.UnionMemberRepo,
+		c.UnionRequestRepo,
+		c.UnionExperienceRepo,
+		c.PlayerRepo,
+		c.UserRepo,
+		c.CacheService,
+		c.NotificationService,
+		c.UnionInviteRepo,
 	)
 }
 

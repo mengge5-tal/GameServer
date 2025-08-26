@@ -11,13 +11,15 @@ import (
 
 // UnionService handles union business logic
 type UnionService struct {
-	unionRepo         repository.UnionRepository
-	memberRepo        repository.UnionMemberRepository
-	requestRepo       repository.UnionRequestRepository
-	experienceRepo    repository.UnionExperienceRepository
-	playerRepo        repository.PlayerRepository
-	userRepo          repository.UserRepository
-	cacheService      cache.CacheService
+	unionRepo           repository.UnionRepository
+	memberRepo          repository.UnionMemberRepository
+	requestRepo         repository.UnionRequestRepository
+	experienceRepo      repository.UnionExperienceRepository
+	playerRepo          repository.PlayerRepository
+	userRepo            repository.UserRepository
+	cacheService        cache.CacheService
+	notificationService NotificationService
+	inviteRepo          repository.UnionInviteRepository
 }
 
 // NewUnionService creates a new union service
@@ -29,15 +31,19 @@ func NewUnionService(
 	playerRepo repository.PlayerRepository,
 	userRepo repository.UserRepository,
 	cacheService cache.CacheService,
+	notificationService NotificationService,
+	inviteRepo repository.UnionInviteRepository,
 ) *UnionService {
 	return &UnionService{
-		unionRepo:      unionRepo,
-		memberRepo:     memberRepo,
-		requestRepo:    requestRepo,
-		experienceRepo: experienceRepo,
-		playerRepo:     playerRepo,
-		userRepo:       userRepo,
-		cacheService:   cacheService,
+		unionRepo:           unionRepo,
+		memberRepo:          memberRepo,
+		requestRepo:         requestRepo,
+		experienceRepo:      experienceRepo,
+		playerRepo:          playerRepo,
+		userRepo:            userRepo,
+		cacheService:        cacheService,
+		notificationService: notificationService,
+		inviteRepo:          inviteRepo,
 	}
 }
 
@@ -48,34 +54,34 @@ func (s *UnionService) GetMyUnionInfo(userID int) (*dto.UnionResponse, error) {
 	if err != nil {
 		return nil, fmt.Errorf("获取用户工会成员信息失败: %w", err)
 	}
-	
+
 	if member == nil {
 		return nil, nil // User is not in any union
 	}
-	
+
 	// Get union details
 	union, err := s.unionRepo.GetByID(member.UnionID)
 	if err != nil {
 		return nil, fmt.Errorf("获取工会信息失败: %w", err)
 	}
-	
+
 	if union == nil {
 		// Clean up orphaned member record
 		s.memberRepo.DeleteByUserID(userID)
 		return nil, nil
 	}
-	
+
 	return &dto.UnionResponse{
-		UnionID:           union.UnionID,
-		UnionName:         union.UnionName,
-		ChairpersonID:     union.ChairpersonID,
-		ChairpersonName:   union.ChairpersonName,
-		ChairpersonLevel:  union.ChairpersonLevel,
-		UnionLevel:        union.UnionLevel,
-		UnionMembers:      union.UnionMembers,
-		Experience:        union.Experience,
-		CreatedTime:       union.CreatedTime,
-		UnionDesc:         union.UnionDesc,
+		UnionID:          union.UnionID,
+		UnionName:        union.UnionName,
+		ChairpersonID:    union.ChairpersonID,
+		ChairpersonName:  union.ChairpersonName,
+		ChairpersonLevel: union.ChairpersonLevel,
+		UnionLevel:       union.UnionLevel,
+		UnionMembers:     union.UnionMembers,
+		Experience:       union.Experience,
+		CreatedTime:      union.CreatedTime,
+		UnionDesc:        union.UnionDesc,
 	}, nil
 }
 
@@ -85,52 +91,52 @@ func (s *UnionService) CreateUnion(req *dto.CreateUnionRequest) (*dto.UnionRespo
 	if len(req.UnionName) < 2 || len(req.UnionName) > 100 {
 		return nil, fmt.Errorf("工会名称长度必须在2-100字符之间")
 	}
-	
+
 	// Check if user is already in a union
 	isInUnion, err := s.memberRepo.IsUserInUnion(req.ChairpersonID)
 	if err != nil {
 		return nil, fmt.Errorf("检查用户工会状态失败: %w", err)
 	}
-	
+
 	if isInUnion {
 		return nil, fmt.Errorf("您已经加入了工会，请先退出当前工会")
 	}
-	
+
 	// Check if union name already exists
 	exists, err := s.unionRepo.Exists(req.UnionName)
 	if err != nil {
 		return nil, fmt.Errorf("检查工会名称失败: %w", err)
 	}
-	
+
 	if exists {
 		return nil, fmt.Errorf("工会名称已存在，请选择其他名称")
 	}
-	
+
 	// Get user info to verify blood energy and get user details
 	user, err := s.userRepo.GetByID(req.ChairpersonID)
 	if err != nil {
 		return nil, fmt.Errorf("获取用户信息失败: %w", err)
 	}
-	
+
 	if user == nil {
 		return nil, fmt.Errorf("用户不存在")
 	}
-	
+
 	// Get player info to check blood energy and level
 	playerInfo, err := s.playerRepo.GetByUserID(req.ChairpersonID)
 	if err != nil {
 		return nil, fmt.Errorf("获取玩家信息失败: %w", err)
 	}
-	
+
 	if playerInfo == nil {
 		return nil, fmt.Errorf("玩家信息不存在")
 	}
-	
+
 	// Check if user has enough blood energy (1000 required)
 	if playerInfo.BloodEnergy < 1000 {
 		return nil, fmt.Errorf("创建工会需要1000点血能量，您当前只有%d点", playerInfo.BloodEnergy)
 	}
-	
+
 	// Start transaction-like operations
 	// Deduct blood energy first
 	newBloodEnergy := playerInfo.BloodEnergy - 1000
@@ -138,7 +144,7 @@ func (s *UnionService) CreateUnion(req *dto.CreateUnionRequest) (*dto.UnionRespo
 	if err != nil {
 		return nil, fmt.Errorf("扣除血能量失败: %w", err)
 	}
-	
+
 	// Create union entity
 	union := &entity.Union{
 		UnionName:        req.UnionName,
@@ -151,14 +157,14 @@ func (s *UnionService) CreateUnion(req *dto.CreateUnionRequest) (*dto.UnionRespo
 		CreatedTime:      time.Now(),
 		UnionDesc:        req.UnionDesc,
 	}
-	
+
 	// Validate union entity
 	if err := union.Validate(); err != nil {
 		// Rollback blood energy
 		s.playerRepo.UpdateBloodEnergy(req.ChairpersonID, playerInfo.BloodEnergy)
 		return nil, fmt.Errorf("工会信息验证失败: %w", err)
 	}
-	
+
 	// Create union
 	err = s.unionRepo.Create(union)
 	if err != nil {
@@ -166,7 +172,7 @@ func (s *UnionService) CreateUnion(req *dto.CreateUnionRequest) (*dto.UnionRespo
 		s.playerRepo.UpdateBloodEnergy(req.ChairpersonID, playerInfo.BloodEnergy)
 		return nil, fmt.Errorf("创建工会失败: %w", err)
 	}
-	
+
 	// Add creator as chairperson member
 	member := &entity.UnionMember{
 		UnionID:     union.UnionID,
@@ -176,7 +182,7 @@ func (s *UnionService) CreateUnion(req *dto.CreateUnionRequest) (*dto.UnionRespo
 		JoinedTime:  time.Now(),
 		RoleID:      entity.UnionRoleLeader, // 2 = Leader/Chairperson
 	}
-	
+
 	err = s.memberRepo.Create(member)
 	if err != nil {
 		// Rollback: delete union and restore blood energy
@@ -184,22 +190,22 @@ func (s *UnionService) CreateUnion(req *dto.CreateUnionRequest) (*dto.UnionRespo
 		s.playerRepo.UpdateBloodEnergy(req.ChairpersonID, playerInfo.BloodEnergy)
 		return nil, fmt.Errorf("添加工会创建者失败: %w", err)
 	}
-	
+
 	// Clear user's union cache if exists
 	s.cacheService.Delete(fmt.Sprintf("user_union:%d", req.ChairpersonID))
-	
+
 	// Return created union information
 	return &dto.UnionResponse{
-		UnionID:           union.UnionID,
-		UnionName:         union.UnionName,
-		ChairpersonID:     union.ChairpersonID,
-		ChairpersonName:   union.ChairpersonName,
-		ChairpersonLevel:  union.ChairpersonLevel,
-		UnionLevel:        union.UnionLevel,
-		UnionMembers:      union.UnionMembers,
-		Experience:        union.Experience,
-		CreatedTime:       union.CreatedTime,
-		UnionDesc:         union.UnionDesc,
+		UnionID:          union.UnionID,
+		UnionName:        union.UnionName,
+		ChairpersonID:    union.ChairpersonID,
+		ChairpersonName:  union.ChairpersonName,
+		ChairpersonLevel: union.ChairpersonLevel,
+		UnionLevel:       union.UnionLevel,
+		UnionMembers:     union.UnionMembers,
+		Experience:       union.Experience,
+		CreatedTime:      union.CreatedTime,
+		UnionDesc:        union.UnionDesc,
 	}, nil
 }
 
@@ -210,42 +216,42 @@ func (s *UnionService) JoinUnion(req *dto.JoinUnionRequest) error {
 	if err != nil {
 		return fmt.Errorf("检查用户工会状态失败: %w", err)
 	}
-	
+
 	if isInUnion {
 		return fmt.Errorf("您已经加入了工会")
 	}
-	
+
 	// Check if union exists
 	union, err := s.unionRepo.GetByID(req.UnionID)
 	if err != nil {
 		return fmt.Errorf("获取工会信息失败: %w", err)
 	}
-	
+
 	if union == nil {
 		return fmt.Errorf("工会不存在")
 	}
-	
+
 	// Check if user already has a pending request to this union
 	hasPending, err := s.requestRepo.HasPendingRequest(req.ApplicantID, req.UnionID)
 	if err != nil {
 		return fmt.Errorf("检查待处理申请失败: %w", err)
 	}
-	
+
 	if hasPending {
 		return fmt.Errorf("您已经向该工会提交了申请，请等待处理")
 	}
-	
+
 	// Get applicant info
 	user, err := s.userRepo.GetByID(req.ApplicantID)
 	if err != nil {
 		return fmt.Errorf("获取申请人信息失败: %w", err)
 	}
-	
+
 	playerInfo, err := s.playerRepo.GetByUserID(req.ApplicantID)
 	if err != nil {
 		return fmt.Errorf("获取申请人玩家信息失败: %w", err)
 	}
-	
+
 	// Create union request
 	request := &entity.UnionRequest{
 		UnionID:        req.UnionID,
@@ -256,12 +262,30 @@ func (s *UnionService) JoinUnion(req *dto.JoinUnionRequest) error {
 		RequestStatus:  entity.UnionRequestStatusPending,
 		RequestTime:    time.Now(),
 	}
-	
+
 	err = s.requestRepo.Create(request)
 	if err != nil {
 		return fmt.Errorf("创建加入申请失败: %w", err)
 	}
-	
+
+	// Send real-time notification to chairperson if online
+	notification := &dto.UnionJoinRequestNotification{
+		RequestID:      request.ID,
+		UnionID:        union.UnionID,
+		UnionName:      union.UnionName,
+		ApplicantID:    req.ApplicantID,
+		ApplicantName:  user.Username,
+		ApplicantLevel: playerInfo.Level,
+		RequestTime:    request.RequestTime.Format("2006-01-02 15:04:05"),
+		Message:        fmt.Sprintf("%s (Lv.%d) 申请加入工会 %s", user.Username, playerInfo.Level, union.UnionName),
+	}
+
+	// Send notification (ignore if chairperson is offline)
+	if err := s.notificationService.SendUnionJoinRequestNotification(union.ChairpersonID, notification); err != nil {
+		// Log error but don't fail the join request
+		println("Failed to send notification to chairperson:", err.Error())
+	}
+
 	return nil
 }
 
@@ -270,25 +294,25 @@ func (s *UnionService) GetRecommendedUnions(limit int) (*dto.UnionListResponse, 
 	if limit <= 0 || limit > 20 {
 		limit = 6 // Default to 6 as specified
 	}
-	
+
 	unions, err := s.unionRepo.GetRecommended(limit)
 	if err != nil {
 		return nil, fmt.Errorf("获取推荐工会失败: %w", err)
 	}
-	
+
 	summaries := make([]dto.UnionSummary, 0, len(unions))
 	for _, union := range unions {
 		summaries = append(summaries, dto.UnionSummary{
-			UnionID:           union.UnionID,
-			UnionName:         union.UnionName,
-			ChairpersonName:   union.ChairpersonName,
-			ChairpersonLevel:  union.ChairpersonLevel,
-			UnionLevel:        union.UnionLevel,
-			UnionMembers:      union.UnionMembers,
-			UnionDesc:         union.UnionDesc,
+			UnionID:          union.UnionID,
+			UnionName:        union.UnionName,
+			ChairpersonName:  union.ChairpersonName,
+			ChairpersonLevel: union.ChairpersonLevel,
+			UnionLevel:       union.UnionLevel,
+			UnionMembers:     union.UnionMembers,
+			UnionDesc:        union.UnionDesc,
 		})
 	}
-	
+
 	return &dto.UnionListResponse{
 		Unions: summaries,
 		Total:  len(summaries),
@@ -302,43 +326,43 @@ func (s *UnionService) ProcessUnionRequest(req *dto.ProcessUnionRequestDTO) erro
 	if err != nil {
 		return fmt.Errorf("获取申请信息失败: %w", err)
 	}
-	
+
 	if request == nil {
 		return fmt.Errorf("申请不存在")
 	}
-	
+
 	// Verify that the user is the chairperson of the union
 	union, err := s.unionRepo.GetByID(request.UnionID)
 	if err != nil {
 		return fmt.Errorf("获取工会信息失败: %w", err)
 	}
-	
+
 	if union == nil {
 		return fmt.Errorf("工会不存在")
 	}
-	
+
 	if union.ChairpersonID != req.ChairpersonID {
 		return fmt.Errorf("只有工会会长可以处理申请")
 	}
-	
+
 	// Check if request is still pending
 	if request.RequestStatus != entity.UnionRequestStatusPending {
 		return fmt.Errorf("该申请已被处理")
 	}
-	
+
 	// If approving, check if applicant is still not in a union
 	if req.Status == entity.UnionRequestStatusApproved {
 		isInUnion, err := s.memberRepo.IsUserInUnion(request.ApplicantID)
 		if err != nil {
 			return fmt.Errorf("检查申请人工会状态失败: %w", err)
 		}
-		
+
 		if isInUnion {
 			// Update request status to rejected since user is already in a union
 			s.requestRepo.ProcessRequest(req.RequestID, entity.UnionRequestStatusRejected)
 			return fmt.Errorf("申请人已加入其他工会")
 		}
-		
+
 		// Add member to union
 		member := &entity.UnionMember{
 			UnionID:     request.UnionID,
@@ -348,12 +372,12 @@ func (s *UnionService) ProcessUnionRequest(req *dto.ProcessUnionRequestDTO) erro
 			JoinedTime:  time.Now(),
 			RoleID:      entity.UnionRoleMember,
 		}
-		
+
 		err = s.memberRepo.Create(member)
 		if err != nil {
 			return fmt.Errorf("添加工会成员失败: %w", err)
 		}
-		
+
 		// Update union member count
 		err = s.unionRepo.IncrementMemberCount(request.UnionID)
 		if err != nil {
@@ -361,17 +385,17 @@ func (s *UnionService) ProcessUnionRequest(req *dto.ProcessUnionRequestDTO) erro
 			s.memberRepo.DeleteByUserID(request.ApplicantID)
 			return fmt.Errorf("更新工会成员数量失败: %w", err)
 		}
-		
+
 		// Clear cache
 		s.cacheService.Delete(fmt.Sprintf("user_union:%d", request.ApplicantID))
 	}
-	
+
 	// Update request status
 	err = s.requestRepo.ProcessRequest(req.RequestID, req.Status)
 	if err != nil {
 		return fmt.Errorf("更新申请状态失败: %w", err)
 	}
-	
+
 	return nil
 }
 
@@ -381,22 +405,22 @@ func (s *UnionService) GetUnionInfo(unionID int) (*dto.UnionResponse, error) {
 	if err != nil {
 		return nil, fmt.Errorf("获取工会信息失败: %w", err)
 	}
-	
+
 	if union == nil {
 		return nil, nil
 	}
-	
+
 	return &dto.UnionResponse{
-		UnionID:           union.UnionID,
-		UnionName:         union.UnionName,
-		ChairpersonID:     union.ChairpersonID,
-		ChairpersonName:   union.ChairpersonName,
-		ChairpersonLevel:  union.ChairpersonLevel,
-		UnionLevel:        union.UnionLevel,
-		UnionMembers:      union.UnionMembers,
-		Experience:        union.Experience,
-		CreatedTime:       union.CreatedTime,
-		UnionDesc:         union.UnionDesc,
+		UnionID:          union.UnionID,
+		UnionName:        union.UnionName,
+		ChairpersonID:    union.ChairpersonID,
+		ChairpersonName:  union.ChairpersonName,
+		ChairpersonLevel: union.ChairpersonLevel,
+		UnionLevel:       union.UnionLevel,
+		UnionMembers:     union.UnionMembers,
+		Experience:       union.Experience,
+		CreatedTime:      union.CreatedTime,
+		UnionDesc:        union.UnionDesc,
 	}, nil
 }
 
@@ -407,11 +431,11 @@ func (s *UnionService) LeaveUnion(userID int) error {
 	if err != nil {
 		return fmt.Errorf("获取用户工会信息失败: %w", err)
 	}
-	
+
 	if member == nil {
 		return fmt.Errorf("您不在任何工会中")
 	}
-	
+
 	// Check if user is the chairperson
 	if member.RoleID == entity.UnionRoleLeader {
 		// Get union info to check member count
@@ -419,34 +443,34 @@ func (s *UnionService) LeaveUnion(userID int) error {
 		if err != nil {
 			return fmt.Errorf("获取工会信息失败: %w", err)
 		}
-		
+
 		if union.UnionMembers > 1 {
 			return fmt.Errorf("工会会长不能直接退出工会，请先转让会长职位或解散工会")
 		}
-		
+
 		// If chairperson is the only member, dissolve the union
 		return s.DismissUnion(&dto.DismissUnionRequest{
 			UnionID:       member.UnionID,
 			ChairpersonID: userID,
 		})
 	}
-	
+
 	// Remove member from union
 	err = s.memberRepo.DeleteByUserID(userID)
 	if err != nil {
 		return fmt.Errorf("退出工会失败: %w", err)
 	}
-	
+
 	// Update union member count
 	err = s.unionRepo.DecrementMemberCount(member.UnionID)
 	if err != nil {
 		// This is not critical, log but don't fail
 		fmt.Printf("Warning: Failed to update union member count: %v", err)
 	}
-	
+
 	// Clear cache
 	s.cacheService.Delete(fmt.Sprintf("user_union:%d", userID))
-	
+
 	return nil
 }
 
@@ -457,21 +481,21 @@ func (s *UnionService) DismissUnion(req *dto.DismissUnionRequest) error {
 	if err != nil {
 		return fmt.Errorf("获取工会信息失败: %w", err)
 	}
-	
+
 	if union == nil {
 		return fmt.Errorf("工会不存在")
 	}
-	
+
 	if union.ChairpersonID != req.ChairpersonID {
 		return fmt.Errorf("只有工会会长可以解散工会")
 	}
-	
+
 	// Get all members to clear their cache
 	members, err := s.memberRepo.GetByUnionID(req.UnionID)
 	if err != nil {
 		return fmt.Errorf("获取工会成员失败: %w", err)
 	}
-	
+
 	// Delete all union members first
 	for _, member := range members {
 		err = s.memberRepo.Delete(member.ID)
@@ -481,7 +505,7 @@ func (s *UnionService) DismissUnion(req *dto.DismissUnionRequest) error {
 		// Clear member's cache
 		s.cacheService.Delete(fmt.Sprintf("user_union:%d", member.MemberID))
 	}
-	
+
 	// Delete all pending requests for this union
 	requests, err := s.requestRepo.GetByUnionID(req.UnionID)
 	if err == nil {
@@ -489,13 +513,13 @@ func (s *UnionService) DismissUnion(req *dto.DismissUnionRequest) error {
 			s.requestRepo.Delete(request.ID)
 		}
 	}
-	
+
 	// Delete the union
 	err = s.unionRepo.Delete(req.UnionID)
 	if err != nil {
 		return fmt.Errorf("解散工会失败: %w", err)
 	}
-	
+
 	return nil
 }
 
@@ -504,25 +528,25 @@ func (s *UnionService) GetUnionRanking(limit int) (*dto.UnionListResponse, error
 	if limit <= 0 || limit > 50 {
 		limit = 10 // Default limit
 	}
-	
+
 	unions, err := s.unionRepo.GetRanking(limit)
 	if err != nil {
 		return nil, fmt.Errorf("获取工会排行榜失败: %w", err)
 	}
-	
+
 	summaries := make([]dto.UnionSummary, 0, len(unions))
 	for _, union := range unions {
 		summaries = append(summaries, dto.UnionSummary{
-			UnionID:           union.UnionID,
-			UnionName:         union.UnionName,
-			ChairpersonName:   union.ChairpersonName,
-			ChairpersonLevel:  union.ChairpersonLevel,
-			UnionLevel:        union.UnionLevel,
-			UnionMembers:      union.UnionMembers,
-			UnionDesc:         union.UnionDesc,
+			UnionID:          union.UnionID,
+			UnionName:        union.UnionName,
+			ChairpersonName:  union.ChairpersonName,
+			ChairpersonLevel: union.ChairpersonLevel,
+			UnionLevel:       union.UnionLevel,
+			UnionMembers:     union.UnionMembers,
+			UnionDesc:        union.UnionDesc,
 		})
 	}
-	
+
 	return &dto.UnionListResponse{
 		Unions: summaries,
 		Total:  len(summaries),
@@ -536,20 +560,20 @@ func (s *UnionService) GetMyUnionRank(userID int) (*dto.UnionRankResponse, error
 	if err != nil {
 		return nil, fmt.Errorf("获取用户工会信息失败: %w", err)
 	}
-	
+
 	if member == nil {
 		return &dto.UnionRankResponse{
 			InUnion: false,
 			Message: "您尚未加入任何工会",
 		}, nil
 	}
-	
+
 	// Get union info
 	union, err := s.unionRepo.GetByID(member.UnionID)
 	if err != nil {
 		return nil, fmt.Errorf("获取工会信息失败: %w", err)
 	}
-	
+
 	if union == nil {
 		// Clean up orphaned member record
 		s.memberRepo.DeleteByUserID(userID)
@@ -558,17 +582,311 @@ func (s *UnionService) GetMyUnionRank(userID int) (*dto.UnionRankResponse, error
 			Message: "您尚未加入任何工会",
 		}, nil
 	}
-	
+
 	// Get union rank
 	rank, err := s.unionRepo.GetUnionRank(member.UnionID)
 	if err != nil {
 		return nil, fmt.Errorf("获取工会排名失败: %w", err)
 	}
-	
+
 	return &dto.UnionRankResponse{
 		InUnion:   true,
 		UnionName: union.UnionName,
 		Rank:      rank,
 		Message:   fmt.Sprintf("您的工会 %s 当前排名第 %d", union.UnionName, rank),
 	}, nil
+}
+
+// GetUnionRequests gets all union application requests for chairperson
+func (s *UnionService) GetUnionRequests(req *dto.GetUnionRequestsRequest) (*dto.UnionRequestListResponse, error) {
+	// Verify that the user is a chairperson of some union
+	member, err := s.memberRepo.GetByUserID(req.ChairpersonID)
+	if err != nil {
+		return nil, fmt.Errorf("获取用户工会信息失败: %w", err)
+	}
+
+	if member == nil || member.RoleID != entity.UnionRoleLeader {
+		return nil, fmt.Errorf("您不是任何工会的会长")
+	}
+
+	// Get all pending requests for this union
+	requests, err := s.requestRepo.GetByUnionIDAndStatus(member.UnionID, entity.UnionRequestStatusPending)
+	if err != nil {
+		return nil, fmt.Errorf("获取申请记录失败: %w", err)
+	}
+
+	responses := make([]dto.UnionRequestResponse, 0, len(requests))
+	for _, request := range requests {
+		// Get union info
+		union, err := s.unionRepo.GetByID(request.UnionID)
+		if err != nil {
+			continue // Skip invalid records
+		}
+
+		// Get applicant info
+		user, err := s.userRepo.GetByID(request.ApplicantID)
+		if err != nil {
+			continue // Skip invalid records
+		}
+
+		player, err := s.playerRepo.GetByUserID(request.ApplicantID)
+		applicantLevel := 1
+		if err == nil && player != nil {
+			applicantLevel = player.Level
+		}
+
+		responses = append(responses, dto.UnionRequestResponse{
+			ID:             request.ID,
+			UnionID:        request.UnionID,
+			UnionName:      union.UnionName,
+			ApplicantID:    request.ApplicantID,
+			ApplicantName:  user.Username,
+			ApplicantLevel: applicantLevel,
+			RequestStatus:  request.RequestStatus,
+			StatusName:     getRequestStatusName(request.RequestStatus),
+			RequestTime:    request.RequestTime,
+		})
+	}
+
+	return &dto.UnionRequestListResponse{
+		Requests: responses,
+		Total:    len(responses),
+	}, nil
+}
+
+// getRequestStatusName returns the Chinese name for request status
+func getRequestStatusName(status int) string {
+	switch status {
+	case entity.UnionRequestStatusPending:
+		return "待处理"
+	case entity.UnionRequestStatusApproved:
+		return "已通过"
+	case entity.UnionRequestStatusRejected:
+		return "已拒绝"
+	default:
+		return "未知"
+	}
+}
+
+// InviteToUnion invites a user to join a union
+func (s *UnionService) InviteToUnion(req *dto.InviteToUnionRequest) error {
+	// Get inviter's union membership
+	inviterMember, err := s.memberRepo.GetByUserID(req.InviterID)
+	if err != nil {
+		return fmt.Errorf("获取邀请人工会信息失败: %w", err)
+	}
+
+	if inviterMember == nil {
+		return fmt.Errorf("您不在任何工会中，无法邀请他人")
+	}
+
+	// Check if inviter has permission to invite (only leaders and vice leaders can invite)
+	if inviterMember.RoleID != entity.UnionRoleLeader && inviterMember.RoleID != entity.UnionRoleViceLeader {
+		return fmt.Errorf("只有会长和副会长才能邀请成员")
+	}
+
+	// Check if invitee is already in a union
+	isInUnion, err := s.memberRepo.IsUserInUnion(req.InviteToUserID)
+	if err != nil {
+		return fmt.Errorf("检查被邀请人工会状态失败: %w", err)
+	}
+
+	if isInUnion {
+		return fmt.Errorf("该玩家已经加入了工会")
+	}
+
+	// Get inviter and invitee info
+	inviter, err := s.userRepo.GetByID(req.InviterID)
+	if err != nil {
+		return fmt.Errorf("获取邀请人信息失败: %w", err)
+	}
+
+	if inviter == nil {
+		return fmt.Errorf("邀请人不存在")
+	}
+
+	invitee, err := s.userRepo.GetByID(req.InviteToUserID)
+	if err != nil {
+		return fmt.Errorf("获取被邀请人信息失败: %w", err)
+	}
+
+	if invitee == nil {
+		return fmt.Errorf("被邀请人不存在")
+	}
+
+	// Get union info
+	union, err := s.unionRepo.GetByID(inviterMember.UnionID)
+	if err != nil {
+		return fmt.Errorf("获取工会信息失败: %w", err)
+	}
+
+	if union == nil {
+		return fmt.Errorf("工会不存在")
+	}
+
+	// Check if there's already a pending invite
+	hasPending, err := s.inviteRepo.HasPendingInvite(inviter.Username, invitee.Username, union.UnionID)
+	if err != nil {
+		return fmt.Errorf("检查待处理邀请失败: %w", err)
+	}
+
+	if hasPending {
+		return fmt.Errorf("您已经向该玩家发送了邀请，请等待处理")
+	}
+
+	// Note: inviter player info not needed for basic invite creation
+
+	// Create union invite
+	invite := &entity.UnionInvite{
+		InviteFromUser:   inviter.Username,
+		InviteToUser:     invitee.Username,
+		UnionID:          union.UnionID,
+		UnionName:        union.UnionName,
+		ChairpersonID:    union.ChairpersonID,
+		ChairpersonName:  union.ChairpersonName,
+		ChairpersonLevel: union.ChairpersonLevel,
+		UnionLevel:       union.UnionLevel,
+		CreateTime:       time.Now(),
+		Status:           entity.UnionInviteStatusPending,
+	}
+
+	err = s.inviteRepo.Create(invite)
+	if err != nil {
+		return fmt.Errorf("创建工会邀请失败: %w", err)
+	}
+
+	// Send real-time notification to invitee if online
+	notification := &dto.UnionInviteNotification{
+		InviteID:         invite.ID,
+		UnionID:          union.UnionID,
+		UnionName:        union.UnionName,
+		InviterName:      inviter.Username,
+		ChairpersonName:  union.ChairpersonName,
+		ChairpersonLevel: union.ChairpersonLevel,
+		UnionLevel:       union.UnionLevel,
+		CreateTime:       invite.CreateTime.Format("2006-01-02 15:04:05"),
+		Message:          fmt.Sprintf("%s 邀请您加入工会 %s", inviter.Username, union.UnionName),
+	}
+
+	// Send notification (ignore if user is offline)
+	if err := s.notificationService.SendUnionInviteNotification(req.InviteToUserID, notification); err != nil {
+		// Log error but don't fail the invite
+		println("Failed to send invite notification to user:", err.Error())
+	}
+
+	return nil
+}
+
+// GetUnionInvites gets all union invitations for a user
+func (s *UnionService) GetUnionInvites(req *dto.GetUnionInvitesRequest) (*dto.UnionInviteListResponse, error) {
+	invites, err := s.inviteRepo.GetPendingByUserID(req.UserID)
+	if err != nil {
+		return nil, fmt.Errorf("获取工会邀请失败: %w", err)
+	}
+
+	responses := make([]dto.UnionInviteResponse, 0, len(invites))
+	for _, invite := range invites {
+		responses = append(responses, dto.UnionInviteResponse{
+			ID:               invite.ID,
+			InviteFromUser:   invite.InviteFromUser,
+			InviteToUser:     invite.InviteToUser,
+			UnionID:          invite.UnionID,
+			UnionName:        invite.UnionName,
+			ChairpersonID:    invite.ChairpersonID,
+			ChairpersonName:  invite.ChairpersonName,
+			ChairpersonLevel: invite.ChairpersonLevel,
+			UnionLevel:       invite.UnionLevel,
+			CreateTime:       invite.CreateTime.Format("2006-01-02 15:04:05"),
+			Status:           invite.Status,
+			StatusName:       invite.GetStatusName(),
+		})
+	}
+
+	return &dto.UnionInviteListResponse{
+		Invites: responses,
+		Total:   len(responses),
+	}, nil
+}
+
+// ProcessUnionInvite processes a union invitation (accept/reject)
+func (s *UnionService) ProcessUnionInvite(req *dto.ProcessUnionInviteRequest) error {
+	// Get the invite details
+	invite, err := s.inviteRepo.GetByID(req.InviteID)
+	if err != nil {
+		return fmt.Errorf("获取邀请信息失败: %w", err)
+	}
+
+	if invite == nil {
+		return fmt.Errorf("邀请不存在")
+	}
+
+	// Verify that the user is the invitee
+	user, err := s.userRepo.GetByID(req.UserID)
+	if err != nil {
+		return fmt.Errorf("获取用户信息失败: %w", err)
+	}
+
+	if user.Username != invite.InviteToUser {
+		return fmt.Errorf("您不是该邀请的接收者")
+	}
+
+	// Check if invite is still pending
+	if !invite.IsPending() {
+		return fmt.Errorf("该邀请已被处理")
+	}
+
+	// Check if user is already in a union
+	isInUnion, err := s.memberRepo.IsUserInUnion(req.UserID)
+	if err != nil {
+		return fmt.Errorf("检查用户工会状态失败: %w", err)
+	}
+
+	if isInUnion {
+		// Update invite status to rejected since user is already in a union
+		s.inviteRepo.ProcessInvite(req.InviteID, entity.UnionInviteStatusRejected)
+		return fmt.Errorf("您已经加入了工会")
+	}
+
+	// If accepting the invite
+	if req.Status == entity.UnionInviteStatusAccepted {
+		// Get player info
+		playerInfo, err := s.playerRepo.GetByUserID(req.UserID)
+		if err != nil {
+			return fmt.Errorf("获取玩家信息失败: %w", err)
+		}
+
+		// Add member to union
+		member := &entity.UnionMember{
+			UnionID:     invite.UnionID,
+			UnionName:   invite.UnionName,
+			MemberID:    req.UserID,
+			MemberLevel: playerInfo.Level,
+			JoinedTime:  time.Now(),
+			RoleID:      entity.UnionRoleMember,
+		}
+
+		err = s.memberRepo.Create(member)
+		if err != nil {
+			return fmt.Errorf("添加工会成员失败: %w", err)
+		}
+
+		// Update union member count
+		err = s.unionRepo.IncrementMemberCount(invite.UnionID)
+		if err != nil {
+			// Rollback member creation
+			s.memberRepo.DeleteByUserID(req.UserID)
+			return fmt.Errorf("更新工会成员数量失败: %w", err)
+		}
+
+		// Clear cache
+		s.cacheService.Delete(fmt.Sprintf("user_union:%d", req.UserID))
+	}
+
+	// Update invite status
+	err = s.inviteRepo.ProcessInvite(req.InviteID, req.Status)
+	if err != nil {
+		return fmt.Errorf("更新邀请状态失败: %w", err)
+	}
+
+	return nil
 }

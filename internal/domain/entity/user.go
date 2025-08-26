@@ -381,3 +381,81 @@ const (
 	UnionRequestStatusApproved = 2 // 已通过
 	UnionRequestStatusRejected = 3 // 已拒绝
 )
+
+// UnionInvite represents a union invitation entity
+type UnionInvite struct {
+	ID                int       `json:"id"`
+	InviteFromUser    string    `json:"invitefromuser"`
+	InviteToUser      string    `json:"invitetouser"`
+	UnionID           int       `json:"unionid"`
+	UnionName         string    `json:"unionname"`
+	ChairpersonID     int       `json:"chairpersonid"`
+	ChairpersonName   string    `json:"chairpersonname"`
+	ChairpersonLevel  int       `json:"chairpersonlevel"`
+	UnionLevel        int       `json:"unionlevel"`
+	CreateTime        time.Time `json:"creattime"`
+	Status            string    `json:"status"` // pending, accepted, rejected
+}
+
+// Validate validates union invite data
+func (ui *UnionInvite) Validate() error {
+	if len(ui.InviteFromUser) < 1 || len(ui.InviteFromUser) > 100 {
+		return NewDomainError("邀请人用户名长度必须在1-100字符之间")
+	}
+	if len(ui.InviteToUser) < 1 || len(ui.InviteToUser) > 100 {
+		return NewDomainError("被邀请人用户名长度必须在1-100字符之间")
+	}
+	if ui.UnionID <= 0 {
+		return NewDomainError("工会ID必须为正数")
+	}
+	if len(ui.UnionName) < 2 || len(ui.UnionName) > 100 {
+		return NewDomainError("工会名称长度必须在2-100字符之间")
+	}
+	if ui.ChairpersonID <= 0 {
+		return NewDomainError("会长ID必须为正数")
+	}
+	if len(ui.ChairpersonName) < 1 || len(ui.ChairpersonName) > 100 {
+		return NewDomainError("会长名称长度必须在1-100字符之间")
+	}
+	if ui.ChairpersonLevel <= 0 {
+		return NewDomainError("会长等级必须为正数")
+	}
+	if ui.UnionLevel <= 0 {
+		return NewDomainError("工会等级必须为正数")
+	}
+	if ui.Status != "pending" && ui.Status != "accepted" && ui.Status != "rejected" {
+		return NewDomainError("邀请状态必须为 pending, accepted 或 rejected")
+	}
+	return nil
+}
+
+// IsPending checks if the invite is pending
+func (ui *UnionInvite) IsPending() bool {
+	return ui.Status == "pending"
+}
+
+// IsProcessed checks if the invite has been processed
+func (ui *UnionInvite) IsProcessed() bool {
+	return ui.Status == "accepted" || ui.Status == "rejected"
+}
+
+// GetStatusName returns the Chinese name for invite status
+func (ui *UnionInvite) GetStatusName() string {
+	switch ui.Status {
+	case "pending":
+		return "待处理"
+	case "accepted":
+		return "已接受"
+	case "rejected":
+		return "已拒绝"
+	default:
+		return "未知状态"
+	}
+}
+
+// UnionInviteStatus constants for invite status
+const (
+	UnionInviteStatusPending  = "pending"
+	UnionInviteStatusAccepted = "accepted"
+	UnionInviteStatusRejected = "rejected"
+)

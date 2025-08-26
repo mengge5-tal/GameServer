@@ -114,3 +114,74 @@ type UnionRankResponse struct {
 	Rank      int    `json:"rank,omitempty"`
 	Message   string `json:"message,omitempty"`
 }
+
+// GetUnionRequestsRequest represents a request to get union application records
+type GetUnionRequestsRequest struct {
+	ChairpersonID int `json:"chairpersonid"`
+}
+
+// UnionJoinRequestNotification represents a notification for new union join request
+type UnionJoinRequestNotification struct {
+	RequestID      int    `json:"request_id"`
+	UnionID        int    `json:"unionid"`
+	UnionName      string `json:"unionname"`
+	ApplicantID    int    `json:"applicantid"`
+	ApplicantName  string `json:"applicantname"`
+	ApplicantLevel int    `json:"applicantlevel"`
+	RequestTime    string `json:"request_time"`
+	Message        string `json:"message"`
+}
+
+// InviteToUnionRequest represents a request to invite someone to join union
+type InviteToUnionRequest struct {
+	InviteToUserID   int    `json:"invite_to_user_id"`
+	InviteToUserName string `json:"invite_to_username"`
+	InviterID        int    `json:"inviter_id"`
+}
+
+// UnionInviteResponse represents union invitation information
+type UnionInviteResponse struct {
+	ID                int    `json:"id"`
+	InviteFromUser    string `json:"invitefromuser"`
+	InviteToUser      string `json:"invitetouser"`
+	UnionID           int    `json:"unionid"`
+	UnionName         string `json:"unionname"`
+	ChairpersonID     int    `json:"chairpersonid"`
+	ChairpersonName   string `json:"chairpersonname"`
+	ChairpersonLevel  int    `json:"chairpersonlevel"`
+	UnionLevel        int    `json:"unionlevel"`
+	CreateTime        string `json:"creattime"`
+	Status            string `json:"status"`
+	StatusName        string `json:"status_name"`
+}
+
+// UnionInviteListResponse represents a list of union invitations
+type UnionInviteListResponse struct {
+	Invites []UnionInviteResponse `json:"invites"`
+	Total   int                   `json:"total"`
+}
+
+// ProcessUnionInviteRequest represents a request to process union invitation
+type ProcessUnionInviteRequest struct {
+	InviteID int    `json:"invite_id"`
+	UserID   int    `json:"user_id"`
+	Status   string `json:"status"` // "accepted" or "rejected"
+}
+
+// GetUnionInvitesRequest represents a request to get union invitations
+type GetUnionInvitesRequest struct {
+	UserID int `json:"user_id"`
+}
+
+// UnionInviteNotification represents a notification for new union invitation
+type UnionInviteNotification struct {
+	InviteID          int    `json:"invite_id"`
+	UnionID           int    `json:"unionid"`
+	UnionName         string `json:"unionname"`
+	InviterName       string `json:"inviter_name"`
+	ChairpersonName   string `json:"chairperson_name"`
+	ChairpersonLevel  int    `json:"chairperson_level"`
+	UnionLevel        int    `json:"union_level"`
+	CreateTime        string `json:"create_time"`
+	Message           string `json:"message"`
+}

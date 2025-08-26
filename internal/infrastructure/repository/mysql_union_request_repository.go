@@ -194,3 +194,31 @@ func (r *mysqlUnionRequestRepository) ProcessRequest(requestID, status int) erro
 	
 	return nil
 }
+
+// GetByUnionIDAndStatus retrieves requests for a union by status
+func (r *mysqlUnionRequestRepository) GetByUnionIDAndStatus(unionID, status int) ([]*entity.UnionRequest, error) {
+	query := `SELECT id, unionid, applicantid, applicantname, applicantlevel, 
+			  chairpersonid, request_status, request_time 
+			  FROM unionrequests WHERE unionid = ? AND request_status = ? 
+			  ORDER BY request_time ASC`
+	
+	rows, err := r.db.Query(query, unionID, status)
+	if err != nil {
+		return nil, fmt.Errorf("获取工会申请列表失败: %w", err)
+	}
+	defer rows.Close()
+	
+	var requests []*entity.UnionRequest
+	for rows.Next() {
+		request := &entity.UnionRequest{}
+		err := rows.Scan(&request.ID, &request.UnionID, &request.ApplicantID,
+			&request.ApplicantName, &request.ApplicantLevel, &request.ChairpersonID,
+			&request.RequestStatus, &request.RequestTime)
+		if err != nil {
+			return nil, fmt.Errorf("扫描申请数据失败: %w", err)
+		}
+		requests = append(requests, request)
+	}
+	
+	return requests, nil
+}

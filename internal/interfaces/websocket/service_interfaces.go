@@ -119,4 +119,8 @@ type UnionServiceInterface interface {
 	DismissUnion(req *dto.DismissUnionRequest) error
 	GetUnionRanking(limit int) (*dto.UnionListResponse, error)
 	GetMyUnionRank(userID int) (*dto.UnionRankResponse, error)
+	GetUnionRequests(req *dto.GetUnionRequestsRequest) (*dto.UnionRequestListResponse, error)
+	InviteToUnion(req *dto.InviteToUnionRequest) error
+	GetUnionInvites(req *dto.GetUnionInvitesRequest) (*dto.UnionInviteListResponse, error)
+	ProcessUnionInvite(req *dto.ProcessUnionInviteRequest) error
 }

@@ -161,6 +161,10 @@ func (r *messageRouter) registerHandlers() {
 	r.register(valueobject.MessageTypeUnion, valueobject.ActionDismissUnion, NewUnionHandler(r.services.UnionService))
 	r.register(valueobject.MessageTypeUnion, valueobject.ActionGetUnionRanking, NewUnionHandler(r.services.UnionService))
 	r.register(valueobject.MessageTypeUnion, valueobject.ActionGetMyUnionRank, NewUnionHandler(r.services.UnionService))
+	r.register(valueobject.MessageTypeUnion, valueobject.ActionGetUnionRequests, NewUnionHandler(r.services.UnionService))
+	r.register(valueobject.MessageTypeUnion, valueobject.ActionInviteToUnion, NewUnionHandler(r.services.UnionService))
+	r.register(valueobject.MessageTypeUnion, valueobject.ActionGetUnionInvites, NewUnionHandler(r.services.UnionService))
+	r.register(valueobject.MessageTypeUnion, valueobject.ActionProcessUnionInvite, NewUnionHandler(r.services.UnionService))
 }
 
 // register registers a handler for a message type and action

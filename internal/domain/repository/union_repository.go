@@ -56,6 +56,7 @@ type UnionRequestRepository interface {
 	GetByUnionID(unionID int) ([]*entity.UnionRequest, error)
 	GetByApplicantID(applicantID int) ([]*entity.UnionRequest, error)
 	GetPendingByUnionID(unionID int) ([]*entity.UnionRequest, error)
+	GetByUnionIDAndStatus(unionID, status int) ([]*entity.UnionRequest, error)
 	Create(request *entity.UnionRequest) error
 	Update(request *entity.UnionRequest) error
 	Delete(id int) error
@@ -72,4 +73,22 @@ type UnionExperienceRepository interface {
 	GetByLevel(level int) (*entity.UnionExperience, error)
 	GetAllLevels() ([]*entity.UnionExperience, error)
 	GetNextLevel(currentLevel int) (*entity.UnionExperience, error)
+}
+
+// UnionInviteRepository defines the interface for union invite data access
+type UnionInviteRepository interface {
+	// Invite operations
+	GetByID(id int) (*entity.UnionInvite, error)
+	GetByUserID(userID int) ([]*entity.UnionInvite, error)
+	GetByUnionID(unionID int) ([]*entity.UnionInvite, error)
+	GetPendingByUserID(userID int) ([]*entity.UnionInvite, error)
+	Create(invite *entity.UnionInvite) error
+	Update(invite *entity.UnionInvite) error
+	Delete(id int) error
+	
+	// Invite validation
+	HasPendingInvite(fromUserName, toUserName string, unionID int) (bool, error)
+	
+	// Invite processing
+	ProcessInvite(inviteID int, status string) error
 }

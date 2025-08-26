@@ -40,6 +40,14 @@ func (h *UnionHandler) Handle(client *Client, message *valueobject.Message) *val
 		return h.handleGetUnionRanking(client, message)
 	case valueobject.ActionGetMyUnionRank:
 		return h.handleGetMyUnionRank(client, message)
+	case valueobject.ActionGetUnionRequests:
+		return h.handleGetUnionRequests(client, message)
+	case valueobject.ActionInviteToUnion:
+		return h.handleInviteToUnion(client, message)
+	case valueobject.ActionGetUnionInvites:
+		return h.handleGetUnionInvites(client, message)
+	case valueobject.ActionProcessUnionInvite:
+		return h.handleProcessUnionInvite(client, message)
 	default:
 		return valueobject.NewErrorResponseWithUniqueID(message.Type, message.Action, valueobject.CodeInvalidRequest, "Unknown union action")
 	}
@@ -281,4 +289,101 @@ func (h *UnionHandler) handleGetMyUnionRank(client *Client, message *valueobject
 	}
 
 	return valueobject.NewSuccessResponseWithUniqueID(message.Type, message.Action, rank)
+}
+
+// handleGetUnionRequests handles getting union application requests for chairperson
+func (h *UnionHandler) handleGetUnionRequests(client *Client, message *valueobject.Message) *valueobject.Response {
+	userID := client.GetUserID()
+	if userID == 0 {
+		return valueobject.NewErrorResponseWithUniqueID(message.Type, message.Action, valueobject.CodeUnauthorized, "User not authenticated")
+	}
+
+	req := &dto.GetUnionRequestsRequest{
+		ChairpersonID: userID,
+	}
+
+	requests, err := h.unionService.GetUnionRequests(req)
+	if err != nil {
+		log.Printf("Get union requests error: %v", err)
+		return valueobject.NewErrorResponseWithUniqueID(message.Type, message.Action, valueobject.CodeInternalError, err.Error())
+	}
+
+	return valueobject.NewSuccessResponseWithUniqueID(message.Type, message.Action, requests)
+}
+
+// handleInviteToUnion handles inviting a user to join a union
+func (h *UnionHandler) handleInviteToUnion(client *Client, message *valueobject.Message) *valueobject.Response {
+	userID := client.GetUserID()
+	if userID == 0 {
+		return valueobject.NewErrorResponseWithUniqueID(message.Type, message.Action, valueobject.CodeUnauthorized, "User not authenticated")
+	}
+
+	var req dto.InviteToUnionRequest
+	if err := json.Unmarshal(message.Data, &req); err != nil {
+		return valueobject.NewErrorResponseWithUniqueID(message.Type, message.Action, valueobject.CodeInvalidRequest, "Invalid invite data")
+	}
+
+	// Set inviter ID from authenticated user
+	req.InviterID = userID
+
+	err := h.unionService.InviteToUnion(&req)
+	if err != nil {
+		log.Printf("Invite to union error: %v", err)
+		return valueobject.NewErrorResponseWithUniqueID(message.Type, message.Action, valueobject.CodeValidationError, err.Error())
+	}
+
+	return valueobject.NewSuccessResponseWithUniqueID(message.Type, message.Action, map[string]interface{}{
+		"message": "工会邀请已发送",
+	})
+}
+
+// handleGetUnionInvites handles getting user's union invitations
+func (h *UnionHandler) handleGetUnionInvites(client *Client, message *valueobject.Message) *valueobject.Response {
+	userID := client.GetUserID()
+	if userID == 0 {
+		return valueobject.NewErrorResponseWithUniqueID(message.Type, message.Action, valueobject.CodeUnauthorized, "User not authenticated")
+	}
+
+	req := &dto.GetUnionInvitesRequest{
+		UserID: userID,
+	}
+
+	invites, err := h.unionService.GetUnionInvites(req)
+	if err != nil {
+		log.Printf("Get union invites error: %v", err)
+		return valueobject.NewErrorResponseWithUniqueID(message.Type, message.Action, valueobject.CodeInternalError, err.Error())
+	}
+
+	return valueobject.NewSuccessResponseWithUniqueID(message.Type, message.Action, invites)
+}
+
+// handleProcessUnionInvite handles processing a union invitation (accept/reject)
+func (h *UnionHandler) handleProcessUnionInvite(client *Client, message *valueobject.Message) *valueobject.Response {
+	userID := client.GetUserID()
+	if userID == 0 {
+		return valueobject.NewErrorResponseWithUniqueID(message.Type, message.Action, valueobject.CodeUnauthorized, "User not authenticated")
+	}
+
+	var req dto.ProcessUnionInviteRequest
+	if err := json.Unmarshal(message.Data, &req); err != nil {
+		return valueobject.NewErrorResponseWithUniqueID(message.Type, message.Action, valueobject.CodeInvalidRequest, "Invalid process invite data")
+	}
+
+	// Set user ID from authenticated user
+	req.UserID = userID
+
+	err := h.unionService.ProcessUnionInvite(&req)
+	if err != nil {
+		log.Printf("Process union invite error: %v", err)
+		return valueobject.NewErrorResponseWithUniqueID(message.Type, message.Action, valueobject.CodeValidationError, err.Error())
+	}
+
+	statusText := "已拒绝"
+	if req.Status == "accepted" {
+		statusText = "已接受"
+	}
+
+	return valueobject.NewSuccessResponseWithUniqueID(message.Type, message.Action, map[string]interface{}{
+		"message": "工会邀请处理成功：" + statusText,
+	})
 }

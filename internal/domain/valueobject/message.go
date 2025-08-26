@@ -129,6 +129,10 @@ const (
 	ActionGetUnionRanking      MessageAction = "getUnionRanking"
 	ActionGetMyUnionRank       MessageAction = "getMyUnionRank"
 	ActionDismissUnion         MessageAction = "dismissUnion"
+	ActionGetUnionRequests     MessageAction = "getUnionRequests"
+	ActionInviteToUnion        MessageAction = "inviteToUnion"
+	ActionGetUnionInvites      MessageAction = "getUnionInvites"
+	ActionProcessUnionInvite   MessageAction = "processUnionInvite"
 )
 
 // Message represents a WebSocket message
