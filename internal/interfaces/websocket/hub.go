@@ -31,6 +31,9 @@ type Hub struct {
 
 	// Services
 	Services *ServiceContainer
+
+	// Client manager for advanced client management
+	ClientManager *ClientManager
 }
 
 // ServiceContainer holds all application services
@@ -47,19 +50,28 @@ type ServiceContainer struct {
 	KillCountService       KillCountServiceInterface
 	RankingService         RankingServiceInterface
 	UnionService           UnionServiceInterface
+	PrivateChatService     PrivateChatServiceInterface
+	WorldChatService       WorldChatServiceInterface
+	UnionChatService       UnionChatServiceInterface
 }
 
 // NewHub creates a new Hub instance
 func NewHub(services *ServiceContainer) *Hub {
 	hub := &Hub{
-		Clients:     make(map[*Client]bool),
-		UserClients: make(map[int]*Client),
-		Register:    make(chan *Client),
-		Unregister:  make(chan *Client),
-		Broadcast:   make(chan []byte),
-		Services:    services,
-		Router:      NewMessageRouter(services),
+		Clients:       make(map[*Client]bool),
+		UserClients:   make(map[int]*Client),
+		Register:      make(chan *Client),
+		Unregister:    make(chan *Client),
+		Broadcast:     make(chan []byte),
+		Services:      services,
+		ClientManager: NewClientManager(services),
 	}
+	
+	// 创建消息路由器时需要传入ClientManager
+	hub.Router = NewMessageRouter(services, hub.ClientManager)
+
+	// 启动心跳检查器
+	hub.ClientManager.StartHeartbeatChecker()
 
 	return hub
 }
@@ -67,7 +79,7 @@ func NewHub(services *ServiceContainer) *Hub {
 // UpdateServices updates the services and recreates the router
 func (h *Hub) UpdateServices(services *ServiceContainer) {
 	h.Services = services
-	h.Router = NewMessageRouter(services)
+	h.Router = NewMessageRouter(services, h.ClientManager)
 }
 
 // Run starts the hub's main loop
@@ -110,6 +122,9 @@ func (h *Hub) unregisterClient(client *Client) {
 	// Remove from user clients map if authenticated
 	if client.UserID > 0 {
 		delete(h.UserClients, client.UserID)
+
+		// Remove from client manager
+		h.ClientManager.RemoveClient(client.UserID)
 
 		// Set user offline status
 		if h.Services.AuthService != nil {
@@ -157,6 +172,9 @@ func (h *Hub) SetUserClient(userID int, client *Client) {
 	h.Mutex.Lock()
 	defer h.Mutex.Unlock()
 	h.UserClients[userID] = client
+	
+	// Add to client manager for advanced features
+	h.ClientManager.AddClient(userID, client)
 }
 
 // GetClientByUserID retrieves a client by user ID

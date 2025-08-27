@@ -54,6 +54,14 @@ func (h *AuthHandler) handleLogin(client *Client, message *valueobject.Message) 
 	client.SetUserID(response.UserID)
 	client.Hub.SetUserClient(response.UserID, client)
 
+	// 自动加入用户所在的工会（用于实时消息推送）
+	if client.Hub.Services != nil && client.Hub.Services.UnionService != nil {
+		if unionInfo, err := client.Hub.Services.UnionService.GetMyUnionInfo(response.UserID); err == nil && unionInfo != nil {
+			client.Hub.ClientManager.JoinUnion(response.UserID, unionInfo.UnionID)
+			log.Printf("用户 %d 登录时自动加入工会 %d", response.UserID, unionInfo.UnionID)
+		}
+	}
+
 	return valueobject.NewSuccessResponseWithUniqueID(message.Type, message.Action, response)
 }
 

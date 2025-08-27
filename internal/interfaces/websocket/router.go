@@ -12,8 +12,9 @@ type MessageRouter interface {
 
 // messageRouter implements MessageRouter
 type messageRouter struct {
-	handlers map[valueobject.MessageType]map[valueobject.MessageAction]MessageHandler
-	services *ServiceContainer
+	handlers      map[valueobject.MessageType]map[valueobject.MessageAction]MessageHandler
+	services      *ServiceContainer
+	clientManager *ClientManager
 }
 
 // MessageHandler defines the interface for message handlers
@@ -30,10 +31,11 @@ func (f MessageHandlerFunc) Handle(client *Client, message *valueobject.Message)
 }
 
 // NewMessageRouter creates a new message router
-func NewMessageRouter(services *ServiceContainer) MessageRouter {
+func NewMessageRouter(services *ServiceContainer, clientManager *ClientManager) MessageRouter {
 	router := &messageRouter{
-		handlers: make(map[valueobject.MessageType]map[valueobject.MessageAction]MessageHandler),
-		services: services,
+		handlers:      make(map[valueobject.MessageType]map[valueobject.MessageAction]MessageHandler),
+		services:      services,
+		clientManager: clientManager,
 	}
 
 	// Register handlers
@@ -172,6 +174,24 @@ func (r *messageRouter) registerHandlers() {
 	r.register(valueobject.MessageTypeUnion, valueobject.ActionGetUnionMembers, NewUnionHandler(r.services.UnionService))
 	r.register(valueobject.MessageTypeUnion, valueobject.ActionSearchUnionMembers, NewUnionHandler(r.services.UnionService))
 	r.register(valueobject.MessageTypeUnion, valueobject.ActionUpdateUnionInfo, NewUnionHandler(r.services.UnionService))
+
+	// Chat handlers
+	chatHandler := NewChatHandler(
+		r.services.PrivateChatService, 
+		r.services.WorldChatService, 
+		r.services.UnionChatService,
+		r.clientManager,
+		r.services,
+	)
+	r.register(valueobject.MessageTypeChat, valueobject.ActionSendPrivateMessage, chatHandler)
+	r.register(valueobject.MessageTypeChat, valueobject.ActionGetPrivateMessages, chatHandler)
+	r.register(valueobject.MessageTypeChat, valueobject.ActionSendWorldMessage, chatHandler)
+	r.register(valueobject.MessageTypeChat, valueobject.ActionJoinWorldChannel, chatHandler)
+	r.register(valueobject.MessageTypeChat, valueobject.ActionLeaveWorldChannel, chatHandler)
+	r.register(valueobject.MessageTypeChat, valueobject.ActionGetWorldChannels, chatHandler)
+	r.register(valueobject.MessageTypeChat, valueobject.ActionSendUnionMessage, chatHandler)
+	r.register(valueobject.MessageTypeChat, valueobject.ActionGetUnionMessages, chatHandler)
+	r.register(valueobject.MessageTypeChat, valueobject.ActionGetRecentUnionMessages, chatHandler)
 }
 
 // register registers a handler for a message type and action

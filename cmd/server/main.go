@@ -88,6 +88,13 @@ func main() {
 	
 	// Update the hub with the new services that include notification support
 	hub.UpdateServices(updatedServices)
+	
+	// Set chat client manager for real-time message broadcasting
+	container.SetChatClientManager(hub.ClientManager)
+	
+	// Start chat cleanup tasks
+	container.StartChatCleanupTasks()
+	
 	go hub.Run()
 
 	logger.Info("WebSocket hub started")
@@ -156,6 +163,9 @@ func setupRoutes(hub *websocket.Hub, container *container.Container, cfg *config
 				"Equipment System",
 				"Friend System",
 				"Real-time WebSocket Communication",
+				"Private Chat System",
+				"World Chat Channels",
+				"Union Chat with Redis Cache",
 			},
 		}
 		json.NewEncoder(w).Encode(info)

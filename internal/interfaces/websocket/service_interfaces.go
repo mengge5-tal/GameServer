@@ -131,3 +131,49 @@ type UnionServiceInterface interface {
 	SearchUnionMembers(req *dto.SearchUnionMembersRequest) (*dto.SearchUnionMembersResponse, error)
 	UpdateUnionInfo(req *dto.UpdateUnionInfoRequest) (*dto.UnionResponse, error)
 }
+
+// PrivateChatServiceInterface defines the interface for private chat service used by websocket handlers
+type PrivateChatServiceInterface interface {
+	SendMessage(fromUserID int, req *dto.SendPrivateMessageRequest) (*dto.PrivateMessageResponse, error)
+	GetMessages(userID int, otherUserID int, page, limit int) (*dto.GetPrivateMessagesResponse, error)
+	GetUnreadMessages(userID int) (*dto.GetPrivateMessagesResponse, error)
+	MarkMessageAsRead(userID int, messageID int64) error
+	MarkAllAsRead(userID int) error
+	GetUnreadCount(userID int) (int, error)
+	GetConversationPreview(userID, otherUserID int) (*dto.PrivateMessageResponse, error)
+	DeleteMessage(userID int, messageID int64) error
+}
+
+// WorldChatServiceInterface defines the interface for world chat service used by websocket handlers
+type WorldChatServiceInterface interface {
+	SendMessage(userID int, req *dto.SendWorldMessageRequest) (*dto.WorldMessageResponse, error)
+	JoinChannel(userID int, req *dto.JoinWorldChannelRequest) (*dto.WorldChannelResponse, error)
+	LeaveChannel(userID int) error
+	GetChannels(userID int) (*dto.GetWorldChannelsResponse, error)
+	GetUserChannelInfo(userID int) (*dto.UserChannelInfo, error)
+	OnUserDisconnect(userID int)
+	BroadcastToChannel(channelID int, message *dto.WorldMessageResponse) error
+}
+
+// UnionChatServiceInterface defines the interface for union chat service used by websocket handlers
+type UnionChatServiceInterface interface {
+	SendMessage(userID int, req *dto.SendUnionMessageRequest) (*dto.UnionMessageResponse, error)
+	GetMessages(userID int, req *dto.GetUnionMessagesRequest) (*dto.GetUnionMessagesResponse, error)
+	GetRecentMessages(userID int, limit int) (*dto.GetUnionMessagesResponse, error)
+	BroadcastToUnion(unionID int, message *dto.UnionMessageResponse) error
+}
+
+// ClientManagerInterface defines the interface for client manager used by chat services
+type ClientManagerInterface interface {
+	AddClient(userID int, client *Client)
+	RemoveClient(userID int)
+	GetClient(userID int) (*Client, bool)
+	IsOnline(userID int) bool
+	SendToUser(userID int, message interface{}) bool
+	BroadcastToWorldChannel(channelID int, message interface{}, excludeUserID int) int
+	BroadcastToUnion(unionID int, message interface{}, excludeUserID int) int
+	JoinWorldChannel(userID, channelID int)
+	LeaveWorldChannel(userID int)
+	JoinUnion(userID, unionID int)
+	LeaveUnion(userID int)
+}

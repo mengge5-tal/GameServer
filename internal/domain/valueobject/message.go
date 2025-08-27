@@ -25,6 +25,7 @@ const (
 	MessageTypeKillCount       MessageType = "killcount"
 	MessageTypeRanking         MessageType = "ranking"
 	MessageTypeUnion           MessageType = "union"
+	MessageTypeChat            MessageType = "chat"
 )
 
 // MessageAction represents different actions within message types
@@ -140,6 +141,18 @@ const (
 	ActionGetUnionMembers      MessageAction = "getUnionMembers"
 	ActionSearchUnionMembers   MessageAction = "searchUnionMembers"
 	ActionUpdateUnionInfo      MessageAction = "updateUnionInfo"
+
+	// Chat actions
+	ActionSendPrivateMessage      MessageAction = "sendPrivateMessage"
+	ActionGetPrivateMessages      MessageAction = "getPrivateMessages"
+	ActionSendWorldMessage        MessageAction = "sendWorldMessage"
+	ActionJoinWorldChannel        MessageAction = "joinWorldChannel"
+	ActionLeaveWorldChannel       MessageAction = "leaveWorldChannel"
+	ActionGetWorldChannels        MessageAction = "getWorldChannels"
+	ActionSendUnionMessage        MessageAction = "sendUnionMessage"
+	ActionGetUnionMessages        MessageAction = "getUnionMessages"
+	ActionGetRecentUnionMessages  MessageAction = "getRecentUnionMessages"
+	ActionGetChatStats            MessageAction = "getChatStats"
 )
 
 // Message represents a WebSocket message

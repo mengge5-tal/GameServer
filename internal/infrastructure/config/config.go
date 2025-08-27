@@ -17,6 +17,7 @@ type Config struct {
 	Logging   LoggingConfig   `json:"logging"`
 	Cache     CacheConfig     `json:"cache"`
 	RateLimit RateLimitConfig `json:"rate_limit"`
+	Redis     *RedisConfig    `json:"redis"`
 }
 
 // DatabaseConfig holds database configuration
@@ -69,6 +70,15 @@ type RateLimitConfig struct {
 	CleanupInterval   time.Duration `json:"cleanup_interval"`
 }
 
+// RedisConfig holds Redis configuration
+type RedisConfig struct {
+	Enabled  bool   `json:"enabled"`
+	Host     string `json:"host"`
+	Port     int    `json:"port"`
+	Password string `json:"password"`
+	DB       int    `json:"db"`
+}
+
 // Load loads configuration from environment variables
 func Load() (*Config, error) {
 	config := &Config{
@@ -108,6 +118,7 @@ func Load() (*Config, error) {
 			RequestsPerMinute: getEnvInt("RATE_LIMIT_RPM", 60),
 			CleanupInterval:   getEnvDuration("RATE_LIMIT_CLEANUP", "1m"),
 		},
+		Redis: loadRedisConfig(),
 	}
 
 	// Validate configuration
@@ -216,4 +227,20 @@ func contains(slice []string, item string) bool {
 		}
 	}
 	return false
+}
+
+// loadRedisConfig 加载Redis配置
+func loadRedisConfig() *RedisConfig {
+	enabled := getEnv("REDIS_ENABLED", "false") == "true"
+	if !enabled {
+		return nil
+	}
+	
+	return &RedisConfig{
+		Enabled:  enabled,
+		Host:     getEnv("REDIS_HOST", "localhost"),
+		Port:     getEnvInt("REDIS_PORT", 6379),
+		Password: getEnv("REDIS_PASSWORD", ""),
+		DB:       getEnvInt("REDIS_DB", 0),
+	}
 }

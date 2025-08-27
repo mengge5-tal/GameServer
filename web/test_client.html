@@ -203,6 +203,50 @@
     </div>
 
     <div class="container">
+        <h2>聊天测试</h2>
+        <div class="grid">
+            <div>
+                <h3>私聊测试</h3>
+                <div class="input-group">
+                    <label>接收者用户ID:</label>
+                    <input type="number" id="privateTargetUserId" value="2">
+                </div>
+                <div class="input-group">
+                    <label>私聊消息:</label>
+                    <input type="text" id="privateMessage" value="你好，这是一条私聊消息">
+                </div>
+                <button onclick="sendPrivateMessage()">发送私聊</button>
+                <button onclick="getPrivateMessages()">获取私聊记录</button>
+            </div>
+            <div>
+                <h3>世界聊天测试</h3>
+                <div class="input-group">
+                    <label>频道ID:</label>
+                    <input type="number" id="worldChannelId" value="1">
+                </div>
+                <div class="input-group">
+                    <label>世界消息:</label>
+                    <input type="text" id="worldMessage" value="大家好，世界聊天测试">
+                </div>
+                <button onclick="joinWorldChannel()">加入频道</button>
+                <button onclick="sendWorldMessage()">发送世界消息</button>
+                <button onclick="leaveWorldChannel()">离开频道</button>
+                <button onclick="getWorldChannels()">获取频道列表</button>
+            </div>
+        </div>
+        <div style="margin-top: 20px;">
+            <h3>工会聊天测试</h3>
+            <div class="input-group">
+                <label>工会消息:</label>
+                <input type="text" id="unionMessage" value="工会成员们好，这是测试消息">
+            </div>
+            <button onclick="sendUnionMessage()">发送工会消息</button>
+            <button onclick="getUnionMessages()">获取工会消息</button>
+            <button onclick="getRecentUnionMessages()">获取最近消息</button>
+        </div>
+    </div>
+
+    <div class="container">
         <h2>其他功能</h2>
         <button onclick="ping()">心跳测试</button>
         <button onclick="clearLog()">清空日志</button>
@@ -415,6 +459,66 @@
 
         function clearLog() {
             document.getElementById('messageLog').innerHTML = '';
+        }
+
+        // ========== 聊天功能 ==========
+        
+        // 私聊功能
+        function sendPrivateMessage() {
+            sendMessage('chat', 'sendPrivateMessage', {
+                to_user_id: parseInt(document.getElementById('privateTargetUserId').value),
+                content: document.getElementById('privateMessage').value
+            });
+        }
+
+        function getPrivateMessages() {
+            sendMessage('chat', 'getPrivateMessages', {
+                other_user_id: parseInt(document.getElementById('privateTargetUserId').value),
+                page: 1,
+                limit: 20
+            });
+        }
+
+        // 世界聊天功能
+        function joinWorldChannel() {
+            sendMessage('chat', 'joinWorldChannel', {
+                channel_id: parseInt(document.getElementById('worldChannelId').value)
+            });
+        }
+
+        function sendWorldMessage() {
+            sendMessage('chat', 'sendWorldMessage', {
+                content: document.getElementById('worldMessage').value
+            });
+        }
+
+        function leaveWorldChannel() {
+            sendMessage('chat', 'leaveWorldChannel', {});
+        }
+
+        function getWorldChannels() {
+            sendMessage('chat', 'getWorldChannels', {});
+        }
+
+        // 工会聊天功能
+        function sendUnionMessage() {
+            sendMessage('chat', 'sendUnionMessage', {
+                content: document.getElementById('unionMessage').value
+            });
+        }
+
+        function getUnionMessages() {
+            sendMessage('chat', 'getUnionMessages', {
+                page: 1,
+                limit: 20,
+                year_month: "" // 空表示当前月
+            });
+        }
+
+        function getRecentUnionMessages() {
+            sendMessage('chat', 'getRecentUnionMessages', {
+                limit: 10
+            });
         }
     </script>
 </body>

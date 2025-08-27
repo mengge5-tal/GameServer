@@ -19,24 +19,27 @@ var upgrader = websocket.Upgrader{
 
 // Client represents a WebSocket client connection
 type Client struct {
-	ID       string          // Client unique ID
-	UserID   int             // User ID (set after authentication)
-	Conn     *websocket.Conn // WebSocket connection
-	Send     chan []byte     // Send message channel
-	Hub      *Hub            // Owning hub
-	IsAuth   bool            // Authentication status
-	LastPing time.Time       // Last ping time
+	ID           string          // Client unique ID
+	UserID       int             // User ID (set after authentication)
+	Conn         *websocket.Conn // WebSocket connection
+	Send         chan []byte     // Send message channel
+	Hub          *Hub            // Owning hub
+	IsAuth       bool            // Authentication status
+	LastPing     time.Time       // Last ping time
+	LastActivity time.Time       // Last activity time
 }
 
 // NewClient creates a new client instance
 func NewClient(conn *websocket.Conn, hub *Hub) *Client {
+	now := time.Now()
 	return &Client{
-		ID:       uuid.New().String(),
-		Conn:     conn,
-		Send:     make(chan []byte, 256),
-		Hub:      hub,
-		IsAuth:   false,
-		LastPing: time.Now(),
+		ID:           uuid.New().String(),
+		Conn:         conn,
+		Send:         make(chan []byte, 256),
+		Hub:          hub,
+		IsAuth:       false,
+		LastPing:     now,
+		LastActivity: now,
 	}
 }
 
@@ -104,6 +107,9 @@ func (c *Client) ReadPump() {
 			break
 		}
 
+		// Update last activity time
+		c.LastActivity = time.Now()
+
 		// Parse message
 		message, err := valueobject.ParseMessage(messageData)
 		if err != nil {
@@ -158,5 +164,17 @@ func (c *Client) HandleMessage(message *valueobject.Message) {
 	if response != nil {
 		response.Timestamp = time.Now().Unix()
 		c.SendResponse(response)
+	}
+}
+
+// Close 关闭客户端连接
+func (c *Client) Close() {
+	// 通过Hub的Unregister channel安全关闭
+	select {
+	case c.Hub.Unregister <- c:
+		// 成功发送关闭信号
+	default:
+		// Hub可能已经关闭，直接关闭连接
+		c.Conn.Close()
 	}
 }
